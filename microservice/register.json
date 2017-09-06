@@ -74,7 +74,7 @@
 		"method": "POST",
 		"redirect": {
 			"method": "POST",
-			"path": "/api/v1/nexgddp/rest-datasets/gee"
+			"path": "/api/v1/nexgddp/rest-datasets/nexgddp"
 		}
 	}]
 }

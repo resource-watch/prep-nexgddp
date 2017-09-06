@@ -11,6 +11,15 @@ from CTRegisterMicroserviceFlask import request_to_microservice
 nexgddp_endpoints = Blueprint('nexgddp_endpoints', __name__)
 
 
+def callback_to_dataset(body):
+    config = {
+        'uri': '/dataset/'+request.get_json().get('connector').get('id'),
+        'method': 'PATCH',
+        'body': body
+    }
+    return request_to_microservice(config)
+
+
 @nexgddp_endpoints.route('/indicators/<scenario>/<model>/<year>/<indicator>', strict_slashes=False, methods=['GET'])
 def get_raster(scenario, model, year):
     return None
@@ -77,18 +86,25 @@ def register_dataset():
 
     # Get and deserialize
     table_name = request.get_json().get('connector').get('table_name')
-    scenario, model, indicator = table_name.rsplit('/')
+    try:
+        scenario, model, indicator = table_name.rsplit('/')
+    except:
+        logging.error('Nexgddp tableName Not Valid')
+        body = {
+            'status': 2,
+            'errorMessage': 'Nexgddp tableName Not Valid'
+        }
+        return jsonify(callback_to_dataset(body)), 200
 
     # @TODO -> validate dataset
     if True:
-        status = 1
+        body = {
+            'status': 1
+        }
     else:
-        status = 2
+        body = {
+            'status': 2,
+            'errorMessage': 'Error Validating Nexgddp Dataset'
+        }
 
-    config = {
-        'uri': '/dataset/'+request.get_json().get('connector').get('id'),
-        'method': 'PATCH',
-        'body': {'status': status}
-    }
-    response = request_to_microservice(config)
-    return jsonify(response), 200
+    return jsonify(callback_to_dataset(body)), 200
