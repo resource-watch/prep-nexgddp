@@ -11,3 +11,7 @@ class Error(Exception):
         return {
             'message': self.message
         }
+
+
+class SqlFormatError(Error):
+    pass

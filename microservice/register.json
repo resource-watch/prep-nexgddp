@@ -1,20 +1,80 @@
+
 {
 	"name": "#(service.name)",
 	"endpoints": [{
-		"path": "/v1/psone/hello",
+		"path": "/v1/query/:dataset",
 		"method": "GET",
 		"binary": true,
 		"redirect": {
+			"method": "POST",
+			"path": "/api/v1/nexgddp/query/:dataset"
+		},
+		"filters": [{
+			"name": "dataset",
+			"path": "/v1/dataset/:dataset",
 			"method": "GET",
-			"path": "/api/v1/psone/hello"
-		}
+			"params": {
+				"dataset": "dataset"
+			},
+			"compare": {
+				"data": {
+					"attributes": {
+						"provider": "nexgddp"
+					}
+				}
+			}
+		}]
 	}, {
-		"path": "/v1/pstwo/hello",
-		"method": "GET",
+		"path": "/v1/query/:dataset",
+		"method": "POST",
 		"binary": true,
 		"redirect": {
+			"method": "POST",
+			"path": "/api/v1/nexgddp/query/:dataset"
+		},
+		"filters": [{
+			"name": "dataset",
+			"path": "/v1/dataset/:dataset",
 			"method": "GET",
-			"path": "/api/v1/pstwo/hello"
+			"params": {
+				"dataset": "dataset"
+			},
+			"compare": {
+				"data": {
+					"attributes": {
+						"provider": "nexgddp"
+					}
+				}
+			}
+		}]
+	}, {
+		"path": "/v1/fields/:dataset",
+		"method": "GET",
+		"redirect": {
+			"method": "POST",
+			"path": "/api/v1/nexgddp/fields/:dataset"
+		},
+		"filters": [{
+			"name": "dataset",
+			"path": "/v1/dataset/:dataset",
+			"method": "GET",
+			"params": {
+				"dataset": "dataset"
+			},
+			"compare": {
+				"data": {
+					"attributes": {
+						"provider": "nexgddp"
+					}
+				}
+			}
+		}]
+	},{
+		"path": "/v1/rest-datasets/nexgddp",
+		"method": "POST",
+		"redirect": {
+			"method": "POST",
+			"path": "/api/v1/nexgddp/rest-datasets/gee"
 		}
 	}]
 }
