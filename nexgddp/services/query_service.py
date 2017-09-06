@@ -7,40 +7,75 @@ import tempfile
 from requests import Request, Session
 from nexgddp.errors import SqlFormatError
 from CTRegisterMicroserviceFlask import request_to_microservice
-# Need to adapt the CT plugin to allow raw responses
 
-CT_URL = os.getenv('CT_URL')
-CT_TOKEN = os.getenv('CT_TOKEN')
-API_VERSION = os.getenv('API_VERSION')
-
+RASDAMAN_URL = os.getenv('RASDAMAN_URL')
 
 class QueryService(object):
 
     @staticmethod
     def get_raster_file(scenario, model, year, indicator):
-        # query =
-
         logging.info('[QueryService] Getting raster from rasdaman')
-        request_url = CT_URL + '/' + API_VERSION + '/query/' + dataset
-        session = Session()
+        query = f"for cov in ({scenario}_{model}_processed) return encode( (cov.{indicator})[ ansi(\"{year}\")], \"PNG\")"
+        raster, content_type = QueryService.get_rasdaman_query(query)
+        return (raster, content_type)
+
+    @staticmethod
+    def get_temporal_series(scenario, model, indicator, lat, lon):
+        logging.info('[QueryService] Getting raster from rasdaman')
+        query = f"for cov in ({scenario}_{model}_processed) return encode( (cov.{indicator})[Lat({lat}), Long({lon})], \"CSV\")"
+        temporal_series, content_type = QueryService.get_rasdaman_query(query)
+        return (temporal_series, content_type)
+
+    @staticmethod
+    def get_rasdaman_query(query):
+        logging.info('[QueryService] Executing rasdaman query')
+        payload_arr = ['<?xml version="1.0" encoding="UTF-8" ?>',
+	           '<ProcessCoveragesRequest xmlns="http://www.opengis.net/wcps/1.0" service="WCPS" version="1.0.0">',
+	           '<query><abstractSyntax>',
+	           query,
+	           '</abstractSyntax></query>',
+	           '</ProcessCoveragesRequest>']
+        payload = ''.join(payload_arr)
+        headers = {'Content-Type': 'application/xml'}
         request = Request(
-            method = "POST",
-            url = request_url,
-            headers = {
-                'content-type': 'application/json',
-                'Authorization': 'Bearer ' + CT_TOKEN
-            },
-            data = json.dumps({"wcps": query})
+            method = 'POST',
+            url = RASDAMAN_URL,
+            data = payload,
+            headers = headers
         )
+        session = Session()
         prepped = session.prepare_request(request)
         response = session.send(prepped)
-        with tempfile.NamedTemporaryFile(suffix='.tiff', delete=False) as f:
-            for chunk in response.iter_content(chunk_size=1024):
-                f.write(chunk)
-            raster_filename = f.name
-            f.close()
-            return raster_filename
 
+        def generate_response():
+            for chunk in response.iter_content(chunk_size=1024):
+                yield(chunk)
+        return (generate_response(), response.headers['content-type'])
+
+    @staticmethod
+    def get_rasdaman_fields(scenario, model):
+        # Need to parse xml
+        logging.info(f"[QueryService] Getting fields for scenario {scenario} and model {model}")
+        headers = {'Content-Type': 'application/xml'}
+        params = {
+            'SERVICE': 'WCS',
+            'VERSION': '2.0.1',
+            'REQUEST': 'DescribeCoverage', 
+            'COVERAGEID': f"{scenario}_{model}_processed"
+        }
+        request = Request(
+            method = 'GET',
+            url = RASDAMAN_URL,
+            headers = headers,
+            params = params
+        )
+        session = Session()
+        prepped = session.prepare_request(request)
+        response = session.send(prepped)
+        logging.debug(response.url)
+        return response.text
+
+    
     @staticmethod
     def convert(query):
         logging.info('Converting Query: '+query)

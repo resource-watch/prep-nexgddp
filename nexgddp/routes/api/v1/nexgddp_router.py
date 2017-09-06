@@ -2,7 +2,7 @@
 
 import logging
 
-from flask import jsonify, request, Blueprint
+from flask import jsonify, request, Blueprint, Response
 from nexgddp.routes.api import error
 from nexgddp.services.query_service import QueryService
 from nexgddp.errors import SqlFormatError
@@ -20,10 +20,20 @@ def callback_to_dataset(body):
     return request_to_microservice(config)
 
 
-@nexgddp_endpoints.route('/indicators/<scenario>/<model>/<year>/<indicator>', strict_slashes=False, methods=['GET'])
-def get_raster(scenario, model, year):
-    return None
+# @nexgddp_endpoints.route('/indicators/<scenario>/<model>/<year>/<indicator>', strict_slashes=False, methods=['GET'])
+# def get_raster(scenario, model, year, indicator):
+#     raster, content_type = QueryService.get_raster_file(scenario, model, year, indicator)
+#     return Response(raster, mimetype=content_type)
+ 
+# @nexgddp_endpoints.route('/indicators/<scenario>/<model>/<indicator>/<lat>/<lon>', strict_slashes=False, methods=['GET'])
+# def get_temporal_series(scenario, model, indicator, lat, lon):
+#     temporal_series, content_type = QueryService.get_temporal_series(scenario, model, indicator, lat, lon)
+#     return Response(temporal_series, mimetype=content_type)
 
+# @nexgddp_endpoints.route('/fields/<scenario>/<model>/', strict_slashes=False, methods=['GET'])
+# def get_fields(scenario, model):
+#     fields = QueryService.get_rasdaman_fields(scenario, model)
+#     return Response(fields, mimetype='application/xml')
 
 @nexgddp_endpoints.route('/query/<dataset_id>', methods=['POST'])
 def query(dataset_id):
@@ -48,7 +58,7 @@ def query(dataset_id):
 
     # query
     latitude = json_sql.get('where', None).get('lat', None)
-    longitude = json_sql.get('where', None).get('long', None)
+    longitude = json_sql.get('where', None).get('long', None) # Need to establish a syntax. 'long' not really appropriate, as it's a reserved word
     year = json_sql.get('where', None).get('year', None)
 
     # @TODO -> doing query
@@ -56,10 +66,10 @@ def query(dataset_id):
     if latitude or longitude:
         pass
         # call method 1 -> method1(scenario, model, indicator, lat, long, year)
+        QueryService.get_temporal_series(scenario, model, indicator, latitude, longitude)
     else:
-        pass
         # call method 2 -> method2(scenario, model, indicator, year)
-
+        QueryService.get_raster_file(scenario, model, year, indicator)
     return response, 200
 
 
