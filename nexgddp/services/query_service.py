@@ -6,17 +6,35 @@ import logging
 import tempfile
 from requests import Request, Session
 from nexgddp.errors import SqlFormatError
+from nexgddp.helpers.gdal_helper import GdalHelper
 from CTRegisterMicroserviceFlask import request_to_microservice
+
+from osgeo import gdal, gdalnumeric
 
 RASDAMAN_URL = os.getenv('RASDAMAN_URL')
 
-class QueryService(object):
+# Allows gdal to use exceptions
+gdal.UseExceptions()
 
+class QueryService(object):
     @staticmethod
-    def get_raster_file(scenario, model, year, indicator):
+    def get_stats(scenario, model, years, indicator, bbox, functions):
         logging.info('[QueryService] Getting raster from rasdaman')
-        query = f"for cov in ({scenario}_{model}_processed) return encode( (cov.{indicator})[ ansi(\"{year}\")], \"PNG\")"
-        return QueryService.get_rasdaman_query(query)
+        results = {}
+        for year in years:
+            query = f"for cov in ({scenario}_{model}_processed) return encode( (cov.{indicator})[ ansi(\"{year}\")], \"GTiff\")"
+            raster_filename = QueryService.get_rasdaman_query(query)
+            try:
+                source_raster = gdal.Open(raster_filename)
+                results[year] = GdalHelper.calc_stats(source_raster)
+                logging.error("[QueryService] Rasdaman was unable to open the rasterfile")
+            finally:
+                source_raster = None
+                # Removing the raster
+                os.remove(os.path.join('/tmp', raster_filename))
+            logging.debug("Results")
+            logging.debug(results)
+        return results
 
     @staticmethod
     def get_temporal_series(scenario, model, indicator, lat, lon):
@@ -43,8 +61,16 @@ class QueryService(object):
         )
         session = Session()
         prepped = session.prepare_request(request)
-        return session.send(prepped)
-
+        response = session.send(prepped)
+        with tempfile.NamedTemporaryFile(suffix='.tiff', delete=False) as f:
+            for chunk in response.iter_content(chunk_size=1024):
+                f.write(chunk)
+            raster_filename = f.name
+            logging.debug("Raster filename")
+            logging.debug(raster_filename)
+            f.close()
+            return raster_filename
+    
     @staticmethod
     def get_rasdaman_fields(scenario, model):
         # Need to parse xml

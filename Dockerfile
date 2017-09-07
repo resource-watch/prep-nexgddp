@@ -1,20 +1,35 @@
-FROM python:3.6-alpine
+FROM python:3.6.2-stretch
 MAINTAINER Enrique Cornejo enrique.cornejo@vizzuality.com
 
 ENV NAME nexgddp
 ENV USER nexgddp
 
-RUN apk update && apk upgrade && \
-   apk add --no-cache --update bash git openssl-dev build-base alpine-sdk \
-   libffi-dev postgresql-dev gcc python3-dev musl-dev
+RUN apt-get update && apt-get install -yq \
+    gcc \
+    bash \
+    git \
+    build-essential \
+    libcurl4-openssl-dev \
+    libffi-dev \
+    libjpeg-dev \
+    libpq-dev \
+    libssl-dev \
+    libxml2-dev \
+    libxslt1-dev \
+    libgdal-dev \
+    gdal-bin
 
-RUN addgroup $USER && adduser -s /bin/bash -D -G $USER $USER
+ENV CPLUS_INCLUDE_PATH /usr/include/gdal
+ENV C_INCLUDE_PATH /usr/include/gdal
+
+RUN groupadd $USER && useradd -g $USER $USER -s /bin/bash
 
 RUN easy_install pip && pip install --upgrade pip
-RUN pip install virtualenv gunicorn gevent
+RUN pip install virtualenv gunicorn gevent numpy
+RUN pip install --global-option=build_ext --global-option="-I/usr/include/gdal" GDAL==2.1.3
 
 RUN mkdir -p /opt/$NAME
-RUN cd /opt/$NAME && virtualenv venv && source venv/bin/activate
+RUN cd /opt/$NAME && virtualenv venv && /bin/bash -c "source venv/bin/activate"
 COPY requirements.txt /opt/$NAME/requirements.txt
 RUN cd /opt/$NAME && pip install -r requirements.txt
 

@@ -26,11 +26,12 @@ def callback_to_dataset(body):
 def get_stats(scenario, model, indicator):
     logging.info("[NexgddpRouter] Obtaining stats for nexgddp")
     bbox = request.args.get('bbox')
-    functions = request.args.get('functions') or "all"
+    if request.args.get('functions') != None:
+        functions = request.args.get('functions')
+    else:
+        functions = ["all"]
+
     years = request.args.getlist('years')
-    logging.debug(bbox)
-    logging.debug(functions)
-    logging.debug(years)
     stats = QueryService.get_stats(scenario, model, years, indicator, bbox, functions)
     return jsonify(stats), 200
 
