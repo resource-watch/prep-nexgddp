@@ -16,41 +16,34 @@ class QueryService(object):
     def get_raster_file(scenario, model, year, indicator):
         logging.info('[QueryService] Getting raster from rasdaman')
         query = f"for cov in ({scenario}_{model}_processed) return encode( (cov.{indicator})[ ansi(\"{year}\")], \"PNG\")"
-        raster, content_type = QueryService.get_rasdaman_query(query)
-        return (raster, content_type)
+        return QueryService.get_rasdaman_query(query)
 
     @staticmethod
     def get_temporal_series(scenario, model, indicator, lat, lon):
         logging.info('[QueryService] Getting raster from rasdaman')
         query = f"for cov in ({scenario}_{model}_processed) return encode( (cov.{indicator})[Lat({lat}), Long({lon})], \"CSV\")"
-        temporal_series, content_type = QueryService.get_rasdaman_query(query)
-        return (temporal_series, content_type)
+        return QueryService.get_rasdaman_query(query)
 
     @staticmethod
     def get_rasdaman_query(query):
         logging.info('[QueryService] Executing rasdaman query')
         payload_arr = ['<?xml version="1.0" encoding="UTF-8" ?>',
-	           '<ProcessCoveragesRequest xmlns="http://www.opengis.net/wcps/1.0" service="WCPS" version="1.0.0">',
-	           '<query><abstractSyntax>',
-	           query,
-	           '</abstractSyntax></query>',
-	           '</ProcessCoveragesRequest>']
+                       '<ProcessCoveragesRequest xmlns="http://www.opengis.net/wcps/1.0" service="WCPS" version="1.0.0">',
+                       '<query><abstractSyntax>',
+                       query,
+                       '</abstractSyntax></query>',
+                       '</ProcessCoveragesRequest>']
         payload = ''.join(payload_arr)
         headers = {'Content-Type': 'application/xml'}
         request = Request(
-            method = 'POST',
-            url = RASDAMAN_URL,
-            data = payload,
-            headers = headers
+            method='POST',
+            url=RASDAMAN_URL,
+            data=payload,
+            headers=headers
         )
         session = Session()
         prepped = session.prepare_request(request)
-        response = session.send(prepped)
-
-        def generate_response():
-            for chunk in response.iter_content(chunk_size=1024):
-                yield(chunk)
-        return (generate_response(), response.headers['content-type'])
+        return session.send(prepped)
 
     @staticmethod
     def get_rasdaman_fields(scenario, model):
@@ -60,14 +53,14 @@ class QueryService(object):
         params = {
             'SERVICE': 'WCS',
             'VERSION': '2.0.1',
-            'REQUEST': 'DescribeCoverage', 
+            'REQUEST': 'DescribeCoverage',
             'COVERAGEID': f"{scenario}_{model}_processed"
         }
         request = Request(
-            method = 'GET',
-            url = RASDAMAN_URL,
-            headers = headers,
-            params = params
+            method='GET',
+            url=RASDAMAN_URL,
+            headers=headers,
+            params=params
         )
         session = Session()
         prepped = session.prepare_request(request)
@@ -75,7 +68,6 @@ class QueryService(object):
         logging.debug(response.url)
         return response.text
 
-    
     @staticmethod
     def convert(query):
         logging.info('Converting Query: '+query)

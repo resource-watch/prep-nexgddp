@@ -2,13 +2,18 @@
 
 import logging
 
-from flask import jsonify, request, Blueprint, Response
+from flask import jsonify, request, Blueprint
 from nexgddp.routes.api import error
 from nexgddp.services.query_service import QueryService
 from nexgddp.errors import SqlFormatError
 from CTRegisterMicroserviceFlask import request_to_microservice
 
 nexgddp_endpoints = Blueprint('nexgddp_endpoints', __name__)
+
+
+def generate_response(response):
+    for chunk in response.iter_content(chunk_size=1024):
+        yield chunk
 
 
 def callback_to_dataset(body):
@@ -19,12 +24,11 @@ def callback_to_dataset(body):
     }
     return request_to_microservice(config)
 
-
 # @nexgddp_endpoints.route('/indicators/<scenario>/<model>/<year>/<indicator>', strict_slashes=False, methods=['GET'])
 # def get_raster(scenario, model, year, indicator):
 #     raster, content_type = QueryService.get_raster_file(scenario, model, year, indicator)
 #     return Response(raster, mimetype=content_type)
- 
+
 # @nexgddp_endpoints.route('/indicators/<scenario>/<model>/<indicator>/<lat>/<lon>', strict_slashes=False, methods=['GET'])
 # def get_temporal_series(scenario, model, indicator, lat, lon):
 #     temporal_series, content_type = QueryService.get_temporal_series(scenario, model, indicator, lat, lon)
@@ -34,6 +38,7 @@ def callback_to_dataset(body):
 # def get_fields(scenario, model):
 #     fields = QueryService.get_rasdaman_fields(scenario, model)
 #     return Response(fields, mimetype='application/xml')
+
 
 @nexgddp_endpoints.route('/query/<dataset_id>', methods=['POST'])
 def query(dataset_id):
@@ -58,34 +63,25 @@ def query(dataset_id):
 
     # query
     latitude = json_sql.get('where', None).get('lat', None)
-    longitude = json_sql.get('where', None).get('long', None) # Need to establish a syntax. 'long' not really appropriate, as it's a reserved word
+    longitude = json_sql.get('where', None).get('long', None)  # Need to establish a syntax. 'long' not really appropriate, as it's a reserved word
     year = json_sql.get('where', None).get('year', None)
 
-    # @TODO -> doing query
-    response = {}  # get rid of this
-    if latitude or longitude:
-        pass
-        # call method 1 -> method1(scenario, model, indicator, lat, long, year)
-        QueryService.get_temporal_series(scenario, model, indicator, latitude, longitude)
-    else:
-        # call method 2 -> method2(scenario, model, indicator, year)
-        QueryService.get_raster_file(scenario, model, year, indicator)
-    return response, 200
+    # st_histogram?
+    response = QueryService.get_raster_file(scenario, model, year, indicator)
+    return (generate_response(response), response.headers['content-type'])
 
 
 @nexgddp_endpoints.route('/fields/<dataset_id>', methods=['POST'])
-def fields(dataset_id):
+def get_fields(dataset_id):
     """NEXGDDP FIELDS ENDPOINT"""
     logging.info('[ROUTER] Getting fields of dataset'+dataset_id)
 
     # Get and deserialize
     dataset = request.get_json().get('data', None)
     table_name = dataset.get('attributes').get('tableName')
-    scenario, model, indicator = table_name.rsplit('/')
-    sql = request.args.get('sql', None) or request.get_json().get('sql', None)
+    scenario, model, _ = table_name.rsplit('/')
 
-    # @TODO -> get fields from method
-
+    fields = QueryService.get_rasdaman_fields(scenario, model)
     return jsonify(data=fields), 200
 
 
