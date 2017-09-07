@@ -47,7 +47,7 @@ class QueryService(object):
     @staticmethod
     def get_histogram(scenario, model, years, indicator, bbox):
         logging.info('[QueryService] Getting histogram from rasdaman')
-        results = {}
+        results = []
 
         for year in years:
             if bbox == []:
@@ -59,7 +59,9 @@ class QueryService(object):
             raster_filename = QueryService.get_rasdaman_query(query)
             try:
                 source_raster = gdal.Open(raster_filename)
-                results[year] = GdalHelper.calc_histogram(source_raster)
+                all_results = GdalHelper.calc_histogram(source_raster)
+                all_results["year"] = year
+                results.append(all_results)
                 logging.error("[QueryService] Rasdaman was unable to open the rasterfile")
             finally:
                 source_raster = None
@@ -68,7 +70,6 @@ class QueryService(object):
             logging.debug("Results")
             logging.debug(results)
         return results
-
 
 
     @staticmethod

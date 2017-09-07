@@ -47,7 +47,7 @@ def get_years(json_sql):
         years = list(map(lambda argument: argument.get('value'), where_sql.get('arguments')))
         years = list(range(years[0], years[1]+1))
         return years
-    elif where_sql.get('type', None) == 'conditional':
+    elif where_sql.get('type', None) == 'conditional' or where_sql.get('type', None) == 'operator':
         def get_years_node(node):
             if node.get('type') == 'operator':
                 if node.get('left').get('value') == 'year' or node.get('left').get('value') == 'year':
@@ -60,7 +60,10 @@ def get_years(json_sql):
 
         get_years_node(where_sql)
         years.sort()
-        years = list(range(years[0], years[1]+1))
+        if len(years) > 1:
+            years = list(range(years[0], years[1]+1))
+        else:
+            years = years
         return years
 
 
@@ -97,10 +100,6 @@ def query(dataset_id, bbox):
     if len(years) == 0:
         return error(status=400, detail='Period of time must be set')
 
-    logging.debug(select)
-    logging.debug(years)
-    logging.debug(bbox)
-
     try:
         if 'st_histogram' in select:
             response = QueryService.get_histogram(scenario, model, years, indicator, bbox)
@@ -108,7 +107,7 @@ def query(dataset_id, bbox):
             response = QueryService.get_stats(scenario, model, years, indicator, bbox, select)
     except PeriodNotValid as e:
         return error(status=500, detail=e.message)
-    return jsonify(data=[response]), 200
+    return jsonify(data=response), 200
 
 
 @nexgddp_endpoints.route('/fields/<dataset_id>', methods=['POST'])
@@ -119,10 +118,37 @@ def get_fields(dataset_id):
     # Get and deserialize
     dataset = request.get_json().get('dataset', None).get('data', None)
     table_name = dataset.get('attributes').get('tableName')
-    scenario, model, _ = table_name.rsplit('/')
+    # scenario, model, _ = table_name.rsplit('/')
 
-    fields = QueryService.get_rasdaman_fields(scenario, model)
-    return jsonify(data=fields), 200
+    # fields = QueryService.get_rasdaman_fields(scenario, model)
+    fields = {
+        'year': {
+            'type': 'number'
+        },
+        'min': {
+            'type': 'number'
+        },
+        'max': {
+            'type': 'number'
+        },
+        'avg': {
+            'type': 'number'
+        },
+        'stdev': {
+            'type': 'number'
+        },
+        'st_histogram': {
+            'type': 'number'
+        },
+        'buckets': {
+            'type': 'number'
+        },
+    }
+    data = {
+        'tableName': table_name,
+        'fields': fields
+    }
+    return jsonify(data=data), 200
 
 
 @nexgddp_endpoints.route('/rest-datasets/nexgddp', methods=['POST'])

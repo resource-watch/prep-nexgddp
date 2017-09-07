@@ -27,6 +27,5 @@ class GdalHelper(object):
             "min": hist[0],
             "max": hist[1],
             "buckets": hist[2],
-            "histogram": hist[3]
+            "st_histogram": hist[3]
         }
-
