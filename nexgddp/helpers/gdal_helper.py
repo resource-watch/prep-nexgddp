@@ -16,3 +16,4 @@ class GdalHelper(object):
             "avg": stats[2],
             "stdev": stats[3]
         }
+ 

@@ -21,9 +21,8 @@ class QueryService(object):
     def get_stats(scenario, model, years, indicator, bbox, functions):
         logging.info('[QueryService] Getting raster from rasdaman')
         results = {}
+
         for year in years:
-            logging.debug("BBOX")
-            logging.debug(bbox)
             if bbox == []:
                 bbox_str = ""
             else:
@@ -33,12 +32,13 @@ class QueryService(object):
             raster_filename = QueryService.get_rasdaman_query(query)
             try:
                 source_raster = gdal.Open(raster_filename)
-                results[year] = GdalHelper.calc_stats(source_raster)
+                all_results = GdalHelper.calc_stats(source_raster)
+                results[year] = {k: all_results[k] for k in functions}
                 logging.error("[QueryService] Rasdaman was unable to open the rasterfile")
             finally:
                 source_raster = None
                 # Removing the raster
-                # os.remove(os.path.join('/tmp', raster_filename))
+                os.remove(os.path.join('/tmp', raster_filename))
             logging.debug("Results")
             logging.debug(results)
         return results
