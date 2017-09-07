@@ -15,3 +15,7 @@ class Error(Exception):
 
 class SqlFormatError(Error):
     pass
+
+
+class GeostoreNotFound(Error):
+    pass
