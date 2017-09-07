@@ -50,6 +50,11 @@ spec:
                 secretKeyRef:
                   name: mssecrets
                   key: API_VERSION
+          - name: RASDAMAN_URL
+            valueFrom:
+                secretKeyRef:
+                  name: dbsecrets
+                  key: RASDAMAN_URL
 
         ports:
           - containerPort: 3078
