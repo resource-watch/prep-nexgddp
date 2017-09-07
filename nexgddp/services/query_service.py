@@ -19,7 +19,7 @@ gdal.UseExceptions()
 class QueryService(object):
     @staticmethod
     def get_stats(scenario, model, years, indicator, bbox, functions):
-        logging.info('[QueryService] Getting raster from rasdaman')
+        logging.info('[QueryService] Getting stats from rasdaman')
         results = {}
 
         for year in years:
@@ -43,6 +43,35 @@ class QueryService(object):
             logging.debug(results)
         return results
 
+
+    @staticmethod
+    def get_histogram(scenario, mode, years, indicator, bbox, functions):
+        logging.info('[QueryService] Getting histogram from rasdaman')
+        results = {}
+        
+        for year in years:
+            if bbox == []:
+                bbox_str = ""
+            else:
+                bbox_str = f",Lat({bbox[0]}:{bbox[2]}),Long({bbox[1]}:{bbox[3]})"            
+            query = f"for cov in ({scenario}_{model}_processed) return encode( (cov.{indicator})[ ansi(\"{year}\") {bbox_str}], \"GTiff\")"
+            logging.info('Running the query ' + query)
+            raster_filename = QueryService.get_rasdaman_query(query)
+            try:
+                source_raster = gdal.Open(raster_filename)
+                all_results = GdalHelper.calc_histogram(source_raster)
+                results[year] = {k: all_results[k] for k in functions}
+                logging.error("[QueryService] Rasdaman was unable to open the rasterfile")
+            finally:
+                source_raster = None
+                # Removing the raster
+                os.remove(os.path.join('/tmp', raster_filename))
+            logging.debug("Results")
+            logging.debug(results)
+        return results
+
+        
+    
     @staticmethod
     def get_temporal_series(scenario, model, indicator, lat, lon):
         logging.info('[QueryService] Getting raster from rasdaman')
