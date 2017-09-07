@@ -6,13 +6,11 @@ from flask import jsonify, request, Blueprint, Response
 from nexgddp.routes.api import error
 from nexgddp.services.query_service import QueryService
 from nexgddp.errors import SqlFormatError
+from nexgddp.middleware import get_bbox_by_hash
 from CTRegisterMicroserviceFlask import request_to_microservice
 
 nexgddp_endpoints = Blueprint('nexgddp_endpoints', __name__)
 
-def generate_response(response):
-    for chunk in response.iter_content(chunk_size=1024):
-        yield chunk
 
 def callback_to_dataset(body):
     config = {
@@ -22,26 +20,59 @@ def callback_to_dataset(body):
     }
     return request_to_microservice(config)
 
-@nexgddp_endpoints.route('/stats/<scenario>/<model>/<indicator>', strict_slashes=False, methods=['GET'])
-def get_stats(scenario, model, indicator):
-    logging.info("[NexgddpRouter] Obtaining stats for nexgddp")
-    bbox = request.args.get('bbox')
-    functions = request.args.get('functions') or "all"
-    years = request.args.getlist('years')
-    logging.debug(bbox)
-    logging.debug(functions)
-    logging.debug(years)
-    stats = QueryService.get_stats(scenario, model, years, indicator, bbox, functions)
-    return jsonify(stats), 200
+
+def get_sql_select(json_sql):
+    select_sql = json_sql.get('select')
+    select = None
+    if len(select_sql) == 1 and select_sql[0].get('value') == '*':
+        select = ['avg', 'min', 'max']  # @TODO
+    else:
+        def is_function(clause):
+            if clause.get('type') == 'function':
+                return clause.get('value')
+
+        select = list(map(is_function, select_sql))
+
+    if select == [None]:
+        raise Exception()
+
+    return select
+
+
+def get_years(json_sql):
+    where_sql = json_sql.get('where', None)
+    if where_sql is None:
+        return []
+    years = []
+    if where_sql.get('type', None) == 'between':
+        years = list(map(lambda argument: argument.get('value'), where_sql.get('arguments')))
+        years = list(range(years[0], years[1]+1))
+        return years
+    elif where_sql.get('type', None) == 'conditional':
+        def get_years_node(node):
+            if node.get('type') == 'operator':
+                if node.get('left').get('value') == 'year' or node.get('left').get('value') == 'year':
+                    value = node.get('left') if node.get('left').get('type') == 'number' else node.get('right')
+                    years.append(value.get('value'))
+            else:
+                if node.get('type') == 'conditional':
+                    get_years_node(node.get('left'))
+                    get_years_node(node.get('right'))
+
+        get_years_node(where_sql)
+        years.sort()
+        years = list(range(years[0], years[1]+1))
+        return years
 
 
 @nexgddp_endpoints.route('/query/<dataset_id>', methods=['POST'])
-def query(dataset_id):
+@get_bbox_by_hash
+def query(dataset_id, bbox):
     """NEXGDDP QUERY ENDPOINT"""
     logging.info('[ROUTER] Doing Query of dataset '+dataset_id)
 
     # Get and deserialize
-    dataset = request.get_json().get('data', None)
+    dataset = request.get_json().get('dataset', None).get('data', None)
     table_name = dataset.get('attributes').get('tableName')
     scenario, model, indicator = table_name.rsplit('/')
     sql = request.args.get('sql', None) or request.get_json().get('sql', None)
@@ -56,14 +87,26 @@ def query(dataset_id):
         logging.error('[ROUTER]: '+str(e))
         return error(status=500, detail='Generic Error')
 
-    # query
-    latitude = json_sql.get('where', None).get('lat', None)
-    longitude = json_sql.get('where', None).get('long', None)  # Need to establish a syntax. 'long' not really appropriate, as it's a reserved word
-    year = json_sql.get('where', None).get('year', None)
+    # Get select
+    try:
+        select = get_sql_select(json_sql)
+    except Exception as e:
+        return error(status=400, detail='Invalid Select')
 
-    # st_histogram?
-    response = QueryService.get_raster_file(scenario, model, year, indicator)
-    return (generate_response(response), response.headers['content-type'])
+    # Get years
+    years = get_years(json_sql)
+    logging.debug(select)
+    logging.debug(years)
+    logging.debug(bbox)
+
+    if 'st_histogram' in select:
+        pass
+        # response = QueryService.function_a(scenario, model, indicator, years, bbox)
+    else:
+        pass
+        # response = QueryService.function_b(select, scenario, model, indicator, years, bbox)
+    # return response
+    return 'ok'
 
 
 @nexgddp_endpoints.route('/fields/<dataset_id>', methods=['POST'])
@@ -72,7 +115,7 @@ def get_fields(dataset_id):
     logging.info('[ROUTER] Getting fields of dataset'+dataset_id)
 
     # Get and deserialize
-    dataset = request.get_json().get('data', None)
+    dataset = request.get_json().get('dataset', None).get('data', None)
     table_name = dataset.get('attributes').get('tableName')
     scenario, model, _ = table_name.rsplit('/')
 

@@ -99,7 +99,7 @@ class QueryService(object):
         logging.info('Converting Query: '+query)
         try:
             config = {
-                'uri': '/convert/sql2SQL',
+                'uri': '/convert/sql2SQL?sql='+query,
                 'method': 'GET'
             }
             response = request_to_microservice(config)
