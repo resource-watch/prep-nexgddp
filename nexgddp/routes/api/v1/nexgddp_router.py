@@ -22,19 +22,6 @@ def callback_to_dataset(body):
     }
     return request_to_microservice(config)
 
-@nexgddp_endpoints.route('/stats/<scenario>/<model>/<indicator>', strict_slashes=False, methods=['GET'])
-def get_stats(scenario, model, indicator):
-    logging.info("[NexgddpRouter] Obtaining stats for nexgddp")
-    bbox = request.args.get('bbox')
-    functions = request.args.get('functions') or "all"
-    years = request.args.getlist('years')
-    logging.debug(bbox)
-    logging.debug(functions)
-    logging.debug(years)
-    stats = QueryService.get_stats(scenario, model, years, indicator, bbox, functions)
-    return jsonify(stats), 200
-
-
 @nexgddp_endpoints.route('/query/<dataset_id>', methods=['POST'])
 def query(dataset_id):
     """NEXGDDP QUERY ENDPOINT"""

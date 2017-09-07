@@ -22,7 +22,14 @@ class QueryService(object):
         logging.info('[QueryService] Getting raster from rasdaman')
         results = {}
         for year in years:
-            query = f"for cov in ({scenario}_{model}_processed) return encode( (cov.{indicator})[ ansi(\"{year}\")], \"GTiff\")"
+            logging.debug("BBOX")
+            logging.debug(bbox)
+            if bbox == []:
+                bbox_str = ""
+            else:
+                bbox_str = f",Lat({bbox[0]}:{bbox[2]}),Long({bbox[1]}:{bbox[3]})"            
+            query = f"for cov in ({scenario}_{model}_processed) return encode( (cov.{indicator})[ ansi(\"{year}\") {bbox_str}], \"GTiff\")"
+            logging.info('Running the query ' + query)
             raster_filename = QueryService.get_rasdaman_query(query)
             try:
                 source_raster = gdal.Open(raster_filename)
@@ -31,7 +38,7 @@ class QueryService(object):
             finally:
                 source_raster = None
                 # Removing the raster
-                os.remove(os.path.join('/tmp', raster_filename))
+                # os.remove(os.path.join('/tmp', raster_filename))
             logging.debug("Results")
             logging.debug(results)
         return results
