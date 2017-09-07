@@ -14,7 +14,7 @@ def get_bbox_by_hash(func):
     def wrapper(*args, **kwargs):
         geostore = request.args.get('geostore', None)
         if not geostore:
-            bbox = None
+            bbox = []
         else:
             try:
                 _, bbox = GeostoreService.get(geostore)

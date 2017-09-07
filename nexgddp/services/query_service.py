@@ -5,7 +5,7 @@ import os
 import logging
 import tempfile
 from requests import Request, Session
-from nexgddp.errors import SqlFormatError
+from nexgddp.errors import SqlFormatError, PeriodNotValid, TableNameNotValid
 from nexgddp.helpers.gdal_helper import GdalHelper
 from CTRegisterMicroserviceFlask import request_to_microservice
 
@@ -26,7 +26,7 @@ class QueryService(object):
             if bbox == []:
                 bbox_str = ""
             else:
-                bbox_str = f",Lat({bbox[0]}:{bbox[2]}),Long({bbox[1]}:{bbox[3]})"            
+                bbox_str = f",Lat({bbox[0]}:{bbox[2]}),Long({bbox[1]}:{bbox[3]})"
             query = f"for cov in ({scenario}_{model}_processed) return encode( (cov.{indicator})[ ansi(\"{year}\") {bbox_str}], \"GTiff\")"
             logging.info('Running the query ' + query)
             raster_filename = QueryService.get_rasdaman_query(query)
@@ -45,22 +45,21 @@ class QueryService(object):
 
 
     @staticmethod
-    def get_histogram(scenario, mode, years, indicator, bbox, functions):
+    def get_histogram(scenario, model, years, indicator, bbox):
         logging.info('[QueryService] Getting histogram from rasdaman')
         results = {}
-        
+
         for year in years:
             if bbox == []:
                 bbox_str = ""
             else:
-                bbox_str = f",Lat({bbox[0]}:{bbox[2]}),Long({bbox[1]}:{bbox[3]})"            
+                bbox_str = f",Lat({bbox[0]}:{bbox[2]}),Long({bbox[1]}:{bbox[3]})"
             query = f"for cov in ({scenario}_{model}_processed) return encode( (cov.{indicator})[ ansi(\"{year}\") {bbox_str}], \"GTiff\")"
             logging.info('Running the query ' + query)
             raster_filename = QueryService.get_rasdaman_query(query)
             try:
                 source_raster = gdal.Open(raster_filename)
-                all_results = GdalHelper.calc_histogram(source_raster)
-                results[year] = {k: all_results[k] for k in functions}
+                results[year] = GdalHelper.calc_histogram(source_raster)
                 logging.error("[QueryService] Rasdaman was unable to open the rasterfile")
             finally:
                 source_raster = None
@@ -70,8 +69,8 @@ class QueryService(object):
             logging.debug(results)
         return results
 
-        
-    
+
+
     @staticmethod
     def get_temporal_series(scenario, model, indicator, lat, lon):
         logging.info('[QueryService] Getting raster from rasdaman')
@@ -98,6 +97,9 @@ class QueryService(object):
         session = Session()
         prepped = session.prepare_request(request)
         response = session.send(prepped)
+        if response.status_code == 404:
+            raise PeriodNotValid('Period Not Valid')
+
         with tempfile.NamedTemporaryFile(suffix='.tiff', delete=False) as f:
             for chunk in response.iter_content(chunk_size=1024):
                 f.write(chunk)
@@ -106,7 +108,7 @@ class QueryService(object):
             logging.debug(raster_filename)
             f.close()
             return raster_filename
-    
+
     @staticmethod
     def get_rasdaman_fields(scenario, model):
         # Need to parse xml
@@ -127,6 +129,9 @@ class QueryService(object):
         session = Session()
         prepped = session.prepare_request(request)
         response = session.send(prepped)
+        if response.status_code == 404:
+            raise TableNameNotValid('Table Name Not Valid')
+
         logging.debug(response.url)
         return response.text
 

@@ -19,3 +19,11 @@ class SqlFormatError(Error):
 
 class GeostoreNotFound(Error):
     pass
+
+
+class PeriodNotValid(Error):
+    pass
+
+
+class TableNameNotValid(Error):
+    pass

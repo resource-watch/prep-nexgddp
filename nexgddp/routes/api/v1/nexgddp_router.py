@@ -5,7 +5,7 @@ import logging
 from flask import jsonify, request, Blueprint, Response
 from nexgddp.routes.api import error
 from nexgddp.services.query_service import QueryService
-from nexgddp.errors import SqlFormatError
+from nexgddp.errors import SqlFormatError, PeriodNotValid, TableNameNotValid
 from nexgddp.middleware import get_bbox_by_hash
 from CTRegisterMicroserviceFlask import request_to_microservice
 
@@ -24,7 +24,7 @@ def get_sql_select(json_sql):
     select_sql = json_sql.get('select')
     select = None
     if len(select_sql) == 1 and select_sql[0].get('value') == '*':
-        select = ['avg', 'min', 'max']  # @TODO
+        select = ['min', 'max', 'avg', 'stdev']  # @TODO
     else:
         def is_function(clause):
             if clause.get('type') == 'function':
@@ -94,18 +94,21 @@ def query(dataset_id, bbox):
 
     # Get years
     years = get_years(json_sql)
+    if len(years) == 0:
+        return error(status=400, detail='Period of time must be set')
+
     logging.debug(select)
     logging.debug(years)
     logging.debug(bbox)
 
-    if 'st_histogram' in select:
-        pass
-        # response = QueryService.function_a(scenario, model, indicator, years, bbox)
-    else:
-        pass
-        # response = QueryService.function_b(select, scenario, model, indicator, years, bbox)
-    # return response
-    return 'ok'
+    try:
+        if 'st_histogram' in select:
+            response = QueryService.get_histogram(scenario, model, years, indicator, bbox)
+        else:
+            response = QueryService.get_stats(scenario, model, years, indicator, bbox, select)
+    except PeriodNotValid as e:
+        return error(status=500, detail=e.message)
+    return jsonify(data=[response]), 200
 
 
 @nexgddp_endpoints.route('/fields/<dataset_id>', methods=['POST'])
@@ -130,8 +133,8 @@ def register_dataset():
     # Get and deserialize
     table_name = request.get_json().get('connector').get('table_name')
     try:
-        scenario, model, indicator = table_name.rsplit('/')
-    except:
+        scenario, model, _ = table_name.rsplit('/')
+    except Exception:
         logging.error('Nexgddp tableName Not Valid')
         body = {
             'status': 2,
@@ -139,15 +142,17 @@ def register_dataset():
         }
         return jsonify(callback_to_dataset(body)), 200
 
-    # @TODO -> validate dataset
-    if True:
-        body = {
-            'status': 1
-        }
-    else:
+    try:
+        QueryService.get_rasdaman_fields(scenario, model)
+    except TableNameNotValid:
         body = {
             'status': 2,
             'errorMessage': 'Error Validating Nexgddp Dataset'
         }
+        return jsonify(callback_to_dataset(body)), 200
+
+    body = {
+        'status': 1
+    }
 
     return jsonify(callback_to_dataset(body)), 200

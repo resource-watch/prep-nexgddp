@@ -19,7 +19,8 @@
 			"compare": {
 				"data": {
 					"attributes": {
-						"provider": "nexgddp"
+						"provider": "nexgddp",
+						"status": "saved"
 					}
 				}
 			}
@@ -42,7 +43,8 @@
 			"compare": {
 				"data": {
 					"attributes": {
-						"provider": "nexgddp"
+						"provider": "nexgddp",
+						"status": "saved"
 					}
 				}
 			}
@@ -64,7 +66,8 @@
 			"compare": {
 				"data": {
 					"attributes": {
-						"provider": "nexgddp"
+						"provider": "nexgddp",
+						"status": "saved"
 					}
 				}
 			}
