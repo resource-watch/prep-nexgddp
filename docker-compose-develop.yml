@@ -13,6 +13,7 @@ develop:
     CT_TOKEN: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6Im1pY3Jvc2VydmljZSIsImNyZWF0ZWRBdCI6IjIwMTYtMDktMTQifQ.IRCIRm1nfIQTfda_Wb6Pg-341zhV8soAgzw7dd5HxxQ
     LOCAL_URL: http://mymachine:3078
     API_VERSION: v1
+    RASDAMAN_URL: http://54.146.170.2:8080/rasdaman/ows
   command: develop
   volumes:
     - ./nexgddp:/opt/nexgddp/nexgddp
