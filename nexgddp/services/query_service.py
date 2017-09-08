@@ -32,15 +32,13 @@ class QueryService(object):
             try:
                 source_raster = gdal.Open(raster_filename)
                 all_results = GdalHelper.calc_stats(source_raster)
-                all_results["year"] = year
-                results.append(all_results)
-                logging.error("[QueryService] Rasdaman was unable to open the rasterfile")
+                desired_results = dict(zip(functions, [all_results[k] for k in functions]))
+                desired_results["year"] = year
+                results.append(desired_results)
             finally:
                 source_raster = None
                 # Removing the raster
                 os.remove(os.path.join('/tmp', raster_filename))
-            logging.debug("Results")
-            logging.debug(results)
         return results
 
 
@@ -62,13 +60,10 @@ class QueryService(object):
                 all_results = GdalHelper.calc_histogram(source_raster)
                 all_results["year"] = year
                 results.append(all_results)
-                logging.error("[QueryService] Rasdaman was unable to open the rasterfile")
             finally:
                 source_raster = None
                 # Removing the raster
                 os.remove(os.path.join('/tmp', raster_filename))
-            logging.debug("Results")
-            logging.debug(results)
         return results
 
 
@@ -105,8 +100,7 @@ class QueryService(object):
             for chunk in response.iter_content(chunk_size=1024):
                 f.write(chunk)
             raster_filename = f.name
-            logging.debug("Raster filename")
-            logging.debug(raster_filename)
+            logging.debug(f"[QueryService] Temporary raster filename: {raster_filename}")
             f.close()
             return raster_filename
 
@@ -132,8 +126,6 @@ class QueryService(object):
         response = session.send(prepped)
         if response.status_code == 404:
             raise TableNameNotValid('Table Name Not Valid')
-
-        logging.debug(response.url)
         return response.text
 
     @staticmethod
