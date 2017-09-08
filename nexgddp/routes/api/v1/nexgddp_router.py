@@ -26,12 +26,10 @@ def get_sql_select(json_sql):
     if len(select_sql) == 1 and select_sql[0].get('value') == '*':
         select = ['min', 'max', 'avg', 'stdev']  # @TODO
     else:
-        def is_function(clause):
-            if clause.get('type') == 'function':
+        def is_literal(clause):
+            if clause.get('type') == 'literal':
                 return clause.get('value')
-
-        select = list(map(is_function, select_sql))
-
+        select = list(map(is_literal, select_sql))
     if select == [None]:
         raise Exception()
 
