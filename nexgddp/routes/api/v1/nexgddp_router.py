@@ -146,7 +146,7 @@ def get_fields(dataset_id):
         'tableName': table_name,
         'fields': fields
     }
-    return jsonify(data=data), 200
+    return jsonify(data), 200
 
 
 @nexgddp_endpoints.route('/rest-datasets/nexgddp', methods=['POST'])
