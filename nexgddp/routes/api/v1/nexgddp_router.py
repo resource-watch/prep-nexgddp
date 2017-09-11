@@ -101,6 +101,8 @@ def query(dataset_id, bbox):
     try:
         if 'st_histogram' in select:
             response = QueryService.get_histogram(scenario, model, years, indicator, bbox)
+        elif 'temporal_series' in select:
+            response = QueryService.get_temporal_series(scenario, model, years, indicator, bbox)
         else:
             response = QueryService.get_stats(scenario, model, years, indicator, bbox, select)
     except PeriodNotValid as e:

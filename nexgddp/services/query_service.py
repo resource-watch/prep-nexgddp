@@ -5,7 +5,7 @@ import os
 import logging
 import tempfile
 from requests import Request, Session
-from nexgddp.errors import SqlFormatError, PeriodNotValid, TableNameNotValid
+from nexgddp.errors import SqlFormatError, PeriodNotValid, TableNameNotValid, GeostoreNeeded
 from nexgddp.helpers.gdal_helper import GdalHelper
 from CTRegisterMicroserviceFlask import request_to_microservice
 
@@ -38,7 +38,7 @@ class QueryService(object):
             finally:
                 source_raster = None
                 # Removing the raster
-                os.remove(os.path.join('/tmp', raster_filename))
+                # os.remove(os.path.join('/tmp', raster_filename))
         return results
 
 
@@ -66,13 +66,40 @@ class QueryService(object):
                 os.remove(os.path.join('/tmp', raster_filename))
         return results
 
-
     @staticmethod
-    def get_temporal_series(scenario, model, indicator, lat, lon):
-        logging.info('[QueryService] Getting raster from rasdaman')
-        query = f"for cov in ({scenario}_{model}_processed) return encode( (cov.{indicator})[Lat({lat}), Long({lon})], \"CSV\")"
-        return QueryService.get_rasdaman_query(query)
+    def get_temporal_series(scenario, model, years, indicator, bbox):
+        logging.info('[QueryService] Getting temporal series from rasdaman')
+        logging.debug(years)
+        year_min = sorted(years)[0]
+        year_max = sorted(years)[-1]
+        logging.info(year_min)
+        logging.info(year_max)
+        results = []
+        if bbox == []:
+            raise GeostoreNeeded("No geostore provided")
+        else:
+            bbox_str = f",Lat({bbox[0]}),Long({bbox[1]})"
+            query = f"for cov in ({scenario}_{model}_processed) return encode( (cov.{indicator})[ ansi(\"{year_min}\":\"{year_max}\") {bbox_str}], \"CSV\")"
+            logging.info('Running the query ' + query)
+            raster_filename = QueryService.get_rasdaman_query(query)
+            try:
+                datafile = open(raster_filename, "r")
+                raw_data = datafile.read()
+                processed_data = raw_data.replace('{', '').replace('}', '').split(',')
+                year_range = list(range(year_min, year_max + 1))
+                zipped_value = list(zip(year_range, processed_data))
+                logging.debug("ZV")
+                logging.debug(zipped_value)
+                final_result = list(map(lambda x: {"year": x[0], str(indicator): x[1]}, zipped_value))
+                logging.debug(final_result)
+                
+            finally:
+                source_raster = None
+                # Removing the raster
+                # os.remove(os.path.join('/tmp', raster_filename))
+        return final_result
 
+    
     @staticmethod
     def get_rasdaman_query(query):
         logging.info('[QueryService] Executing rasdaman query')
