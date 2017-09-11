@@ -5,7 +5,7 @@ import logging
 from flask import jsonify, request, Blueprint, Response
 from nexgddp.routes.api import error
 from nexgddp.services.query_service import QueryService
-from nexgddp.errors import SqlFormatError, PeriodNotValid, TableNameNotValid
+from nexgddp.errors import SqlFormatError, PeriodNotValid, TableNameNotValid, GeostoreNeeded
 from nexgddp.middleware import get_bbox_by_hash
 from CTRegisterMicroserviceFlask import request_to_microservice
 
@@ -107,6 +107,8 @@ def query(dataset_id, bbox):
             response = QueryService.get_stats(scenario, model, years, indicator, bbox, select)
     except PeriodNotValid as e:
         return error(status=500, detail=e.message)
+    except GeostoreNeeded as e:
+        return error(status=400, detail=e.message)
     return jsonify(data=response), 200
 
 

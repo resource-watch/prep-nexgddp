@@ -38,7 +38,7 @@ class QueryService(object):
             finally:
                 source_raster = None
                 # Removing the raster
-                # os.remove(os.path.join('/tmp', raster_filename))
+                os.remove(os.path.join('/tmp', raster_filename))
         return results
 
 
@@ -69,7 +69,6 @@ class QueryService(object):
     @staticmethod
     def get_temporal_series(scenario, model, years, indicator, bbox):
         logging.info('[QueryService] Getting temporal series from rasdaman')
-        logging.debug(years)
         year_min = sorted(years)[0]
         year_max = sorted(years)[-1]
         logging.info(year_min)
@@ -88,15 +87,11 @@ class QueryService(object):
                 processed_data = raw_data.replace('{', '').replace('}', '').split(',')
                 year_range = list(range(year_min, year_max + 1))
                 zipped_value = list(zip(year_range, processed_data))
-                logging.debug("ZV")
-                logging.debug(zipped_value)
-                final_result = list(map(lambda x: {"year": x[0], str(indicator): x[1]}, zipped_value))
-                logging.debug(final_result)
-                
+                final_result = list(map(lambda x: {"year": x[0], str(indicator): float(x[1])}, zipped_value))
             finally:
                 source_raster = None
                 # Removing the raster
-                # os.remove(os.path.join('/tmp', raster_filename))
+                os.remove(os.path.join('/tmp', raster_filename))
         return final_result
 
     
