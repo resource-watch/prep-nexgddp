@@ -75,7 +75,7 @@ class QueryService(object):
         logging.info(year_max)
         results = []
         if bbox == []:
-            raise GeostoreNeeded("No geostore provided")
+            raise GeostoreNeeded("No latitude and longitude provided")
         else:
             bbox_str = f",Lat({bbox[0]}),Long({bbox[1]})"
             query = f"for cov in ({scenario}_{model}_processed) return encode( (cov.{indicator})[ ansi(\"{year_min}\":\"{year_max}\") {bbox_str}], \"CSV\")"

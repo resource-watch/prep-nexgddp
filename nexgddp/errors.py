@@ -39,3 +39,6 @@ class XMLParserError(Error):
 
 class InvalidField(Error):
     pass
+
+class InvalidCoordinates(Error):
+    pass

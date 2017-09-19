@@ -7,7 +7,7 @@ from nexgddp.routes.api import error
 from nexgddp.services.query_service import QueryService
 from nexgddp.services.xml_service import XMLService
 from nexgddp.errors import SqlFormatError, PeriodNotValid, TableNameNotValid, GeostoreNeeded, XMLParserError, InvalidField
-from nexgddp.middleware import get_bbox_by_hash
+from nexgddp.middleware import get_bbox_by_hash, get_latlon
 from CTRegisterMicroserviceFlask import request_to_microservice
 
 nexgddp_endpoints = Blueprint('nexgddp_endpoints', __name__)
@@ -44,9 +44,13 @@ def get_sql_select(json_sql):
         select_functions = list(map(is_function, select_sql))
         select_literals  = list(map(is_literal,  select_sql))
 
+        logging.info(select_functions)
+        logging.info(select_literals)
         select = list(filter(None, select_functions + select_literals))
-        
         logging.info(select)
+    if select_functions != [None] and select_literals != [None]:
+        logging.debug("Provided functions and literals at the same time")
+        raise Exception()
     if select == [None] or len(select) == 0 or select is None:
         raise Exception()
     return select
@@ -99,6 +103,7 @@ def get_query_type(select):
 
 @nexgddp_endpoints.route('/query/<dataset_id>', methods=['POST'])
 @get_bbox_by_hash
+@get_latlon
 def query(dataset_id, bbox):
     """NEXGDDP QUERY ENDPOINT"""
     logging.info('[ROUTER] Doing Query of dataset '+dataset_id)
@@ -137,6 +142,12 @@ def query(dataset_id, bbox):
 
     # Query type
     special_query_type, query_indicator = get_query_type(select)
+
+    logging.debug("Special query type")
+    logging.debug(special_query_type)
+
+    logging.debug("Query indicator")
+    logging.debug(query_indicator)
 
     # Fields
     fields_xml = QueryService.get_rasdaman_fields(scenario, model)
