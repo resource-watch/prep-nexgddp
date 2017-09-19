@@ -94,7 +94,7 @@ class QueryService(object):
                 os.remove(os.path.join('/tmp', raster_filename))
         return final_result
 
-    
+
     @staticmethod
     def get_rasdaman_query(query):
         logging.info('[QueryService] Executing rasdaman query')

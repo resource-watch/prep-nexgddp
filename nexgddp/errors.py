@@ -28,5 +28,14 @@ class PeriodNotValid(Error):
 class TableNameNotValid(Error):
     pass
 
+
 class GeostoreNeeded(Error):
+    pass
+
+
+class XMLParserError(Error):
+    pass
+
+
+class InvalidField(Error):
     pass
