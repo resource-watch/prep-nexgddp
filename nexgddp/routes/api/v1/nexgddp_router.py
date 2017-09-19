@@ -25,10 +25,7 @@ def get_sql_select(json_sql):
     select_sql = json_sql.get('select')
     select = None
     if len(select_sql) == 1 and select_sql[0].get('value') == '*':
-        select = [{
-            'function': 'avg',
-            'argument': 'pepe'
-        }]  # @TODO
+        raise Exception() # No * allowed
     else:
         def is_function(clause):
             if clause.get('type') == 'function' and clause.get('arguments') and len(clause.get('arguments')) > 0:
@@ -36,10 +33,22 @@ def get_sql_select(json_sql):
                     'function': clause.get('value'),
                     'argument': clause.get('arguments')[0].get('value')
                 }
-        select = list(map(is_function, select_sql))
+
+        def is_literal(clause):
+            if clause.get('type') == 'literal':
+                return {
+                    'function': 'temporal_series',
+                    'argument': clause.get('value')
+                }
+        
+        select_functions = list(map(is_function, select_sql))
+        select_literals  = list(map(is_literal,  select_sql))
+
+        select = list(filter(None, select_functions + select_literals))
+        
+        logging.info(select)
     if select == [None] or len(select) == 0 or select is None:
         raise Exception()
-
     return select
 
 
@@ -106,6 +115,8 @@ def query(dataset_id, bbox):
     # convert
     try:
         _, json_sql = QueryService.convert(sql)
+        logging.debug("json_sql")
+        logging.debug(json_sql)
     except SqlFormatError as e:
         logging.error(e.message)
         return error(status=500, detail=e.message)
