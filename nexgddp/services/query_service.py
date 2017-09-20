@@ -18,27 +18,29 @@ gdal.UseExceptions()
 
 class QueryService(object):
     @staticmethod
-    def get_stats(scenario, model, years, bbox, functions):
-        logging.info('[QueryService] Getting stats from rasdaman')
+    def get_stats(scenario, model, years, indicator, bbox, function):
+        logging.info('[QueryService] Getting aggregated temporal series from rasdaman')
+        year_min = sorted(years)[0]
+        year_max = sorted(years)[-1]
+        logging.info(year_min)
+        logging.info(year_max)
         results = []
-        for year in years:
-            if bbox == []:
-                bbox_str = ""
-            else:
-                bbox_str = f",Lat({bbox[0]}:{bbox[2]}),Long({bbox[1]}:{bbox[3]})"
-            query = f"for cov in ({scenario}_{model}_processed) return encode( (cov.{indicator})[ ansi(\"{year}\") {bbox_str}], \"GTiff\")"
+        if bbox == []:
+            raise GeostoreNeeded("No latitude and longitude provided")
+        else:
+            bbox_str = f",Lat({bbox[0]}),Long({bbox[1]})"
+            query = f"for cov in ({scenario}_{model}_processed) return encode( {function}((cov.{indicator})[ ansi(\"{year_min}\":\"{year_max}\") {bbox_str}]), \"CSV\")"
             logging.info('Running the query ' + query)
             raster_filename = QueryService.get_rasdaman_query(query)
             try:
-                source_raster = gdal.Open(raster_filename)
-                all_results = GdalHelper.calc_stats(source_raster)
-                desired_results = dict(zip(functions, [all_results[k] for k in functions]))
-                desired_results["year"] = year
-                results.append(desired_results)
+                datafile = open(raster_filename, "r")
+                raw_data = datafile.read()
+                processed_data = raw_data.replace('{', '').replace('}', '').split(',')
             finally:
                 source_raster = None
                 # Removing the raster
                 os.remove(os.path.join('/tmp', raster_filename))
+        return map(float, processed_data)
         return results
 
 

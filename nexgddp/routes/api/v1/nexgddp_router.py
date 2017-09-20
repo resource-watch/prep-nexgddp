@@ -169,7 +169,9 @@ def query(dataset_id, bbox):
                 indicator = element['argument']
                 results[indicator] = QueryService.get_temporal_series(scenario, model, years, indicator, bbox)
             else:
-                None
+                function = element['function']
+                indicator = element['argument']
+                results[indicator] = QueryService.get_stats(scenario, model, years, indicator, bbox, function)
         except InvalidField as e:
             return error(status=400, detail=e.message)
         except PeriodNotValid as e:
