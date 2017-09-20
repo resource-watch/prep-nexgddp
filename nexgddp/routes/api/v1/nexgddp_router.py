@@ -43,14 +43,16 @@ def get_sql_select(json_sql):
         
         select_functions = list(map(is_function, select_sql))
         select_literals  = list(map(is_literal,  select_sql))
-
-        logging.info(select_functions)
-        logging.info(select_literals)
         select = list(filter(None, select_functions + select_literals))
-        logging.info(select)
-    if select_functions != [None] and select_literals != [None]:
+
+        logging.debug("Select")
+        logging.debug(select)
+
+    # Reductions and temporal series have different cardinality - can't be both at the same time
+    if not all(val is None for val in select_functions) and not all(val is None for val in select_literals):
         logging.debug("Provided functions and literals at the same time")
         raise Exception()
+    # And it's neccesary to select something
     if select == [None] or len(select) == 0 or select is None:
         raise Exception()
     return select
@@ -85,20 +87,20 @@ def get_years(json_sql):
         return years
 
 
-def get_query_type(select):
-    query_type = None
-    query_indicator = None
-    for clause in select:
-        query_indicator = clause.get('argument')
-        if clause.get('function') == 'st_histogram':
-            query_type = 'st_histogram'
-            break
-        elif clause.get('function') == 'temporal_series':
-            query_type = 'temporal_series'
-            break
-        else:
-            pass
-    return query_type, query_indicator
+# def get_query_type(select):
+#     query_type = None
+#     query_indicator = None
+#     for clause in select:
+#         query_indicator = clause.get('argument')
+#         if clause.get('function') == 'st_histogram':
+#             query_type = 'st_histogram'
+#             break
+#         elif clause.get('function') == 'temporal_series':
+#             query_type = 'temporal_series'
+#             break
+#         else:
+#             pass
+#     return query_type, query_indicator
 
 
 @nexgddp_endpoints.route('/query/<dataset_id>', methods=['POST'])
@@ -141,50 +143,72 @@ def query(dataset_id, bbox):
         return error(status=400, detail='Period of time must be set')
 
     # Query type
-    special_query_type, query_indicator = get_query_type(select)
-
-    logging.debug("Special query type")
-    logging.debug(special_query_type)
-
-    logging.debug("Query indicator")
-    logging.debug(query_indicator)
+    # special_query_type, query_indicator = get_query_type(select)
 
     # Fields
     fields_xml = QueryService.get_rasdaman_fields(scenario, model)
     fields = XMLService.get_fields(fields_xml)
+    logging.debug("Fields")
+    fields.update({'year': {'type': 'date'}})
+    logging.debug(fields)
+    # This is what a select looks like - only aggr funcs or 'temporal_series' though
+    # [
+    #     {'function': 'avg',             'argument': 'prmaxday'},
+    #     {'function': 'temporal_series', 'argument': 'prmaxday'},
+    #     {'function': 'temporal_series', 'argument': 'pr99p'}
+    # ]
 
-    try:
-        if special_query_type:
-            if query_indicator not in fields:
+    results = {}
+    for element in select:
+        try:
+            if element['argument'] not in fields:
                 raise InvalidField(message='Invalid Fields')
-            if special_query_type == 'st_histogram':
-                response = QueryService.get_histogram(scenario, model, years, query_indicator, bbox)
-            elif special_query_type == 'temporal_series':
-                if all(coord is None for coord in bbox):
-                    raise CoordinatesNeeded(message='No coordinates provided')
-                response = QueryService.get_temporal_series(scenario, model, years, query_indicator, bbox)
-        else:
-            for idx in range(0, len(select)):
-                if select[idx].get('argument') not in fields:
-                    del select[idx]
-            if len(select) == 0:
-                raise InvalidField(message='Invalid Fields')
-            logging.debug("select")
-            logging.debug(scenario)
-            logging.debug(model)
-            logging.debug(years)
-            logging.debug(bbox)
-            logging.debug(select)
-            response = QueryService.get_stats(scenario, model, years, bbox, select)
-    except InvalidField as e:
-        return error(status=400, detail=e.message)
-    except PeriodNotValid as e:
-        return error(status=400, detail=e.message)
-    except GeostoreNeeded as e:
-        return error(status=400, detail=e.message)
-    except CoordinatesNeeded as e:
-        return error(status=400, detail=e.message)
-    return jsonify(data=response), 200
+            if element['function'] == 'temporal_series' and element['argument'] == 'year':
+                results['year'] = years
+            elif element['function'] == 'temporal_series':
+                indicator = element['argument']
+                results[indicator] = QueryService.get_temporal_series(scenario, model, years, indicator, bbox)
+            else:
+                None
+        except InvalidField as e:
+            return error(status=400, detail=e.message)
+        except PeriodNotValid as e:
+            return error(status=400, detail=e.message)
+        except GeostoreNeeded as e:
+            return error(status=400, detail=e.message)
+        except CoordinatesNeeded as e:
+            return error(status=400, detail=e.message)
+    logging.debug("Results")
+    logging.debug(results)
+
+    output = [dict(zip(results, col)) for col in zip(*results.values())]
+    # return jsonify(data=response), 200
+    return jsonify(data=output), 200
+    
+    # try:
+    #     if special_query_type:
+    #         if query_indicator not in fields:
+    #             raise InvalidField(message='Invalid Fields')
+    #         if special_query_type == 'st_histogram':
+    #             response = QueryService.get_histogram(scenario, model, years, query_indicator, bbox)
+    #         elif special_query_type == 'temporal_series':
+    #             if all(coord is None for coord in bbox):
+    #                 raise CoordinatesNeeded(message='No coordinates provided')
+    #             response = QueryService.get_temporal_series(scenario, model, years, query_indicator, bbox)
+    #     else:
+    #         for idx in range(0, len(select)):
+    #             if select[idx].get('argument') not in fields:
+    #                 del select[idx]
+    #         if len(select) == 0:
+    #             raise InvalidField(message='Invalid Fields')
+    #         logging.debug("select")
+    #         logging.debug(scenario)
+    #         logging.debug(model)
+    #         logging.debug(years)
+    #         logging.debug(bbox)
+    #         logging.debug(select)
+    #        response = QueryService.get_stats(scenario, model, years, bbox, select)
+    #except 
 
 
 @nexgddp_endpoints.route('/fields/<dataset_id>', methods=['POST'])

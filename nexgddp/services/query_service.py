@@ -18,7 +18,7 @@ gdal.UseExceptions()
 
 class QueryService(object):
     @staticmethod
-    def get_stats(scenario, model, years, indicator, bbox, functions):
+    def get_stats(scenario, model, years, bbox, functions):
         logging.info('[QueryService] Getting stats from rasdaman')
         results = []
         for year in years:
@@ -85,14 +85,11 @@ class QueryService(object):
                 datafile = open(raster_filename, "r")
                 raw_data = datafile.read()
                 processed_data = raw_data.replace('{', '').replace('}', '').split(',')
-                year_range = list(range(year_min, year_max + 1))
-                zipped_value = list(zip(year_range, processed_data))
-                final_result = list(map(lambda x: {"year": x[0], str(indicator): float(x[1])}, zipped_value))
             finally:
                 source_raster = None
                 # Removing the raster
                 os.remove(os.path.join('/tmp', raster_filename))
-        return final_result
+        return map(float, processed_data)
 
 
     @staticmethod
