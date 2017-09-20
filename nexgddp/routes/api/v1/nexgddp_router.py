@@ -6,7 +6,7 @@ from flask import jsonify, request, Blueprint, Response
 from nexgddp.routes.api import error
 from nexgddp.services.query_service import QueryService
 from nexgddp.services.xml_service import XMLService
-from nexgddp.errors import SqlFormatError, PeriodNotValid, TableNameNotValid, GeostoreNeeded, XMLParserError, InvalidField
+from nexgddp.errors import SqlFormatError, PeriodNotValid, TableNameNotValid, GeostoreNeeded, XMLParserError, InvalidField, CoordinatesNeeded
 from nexgddp.middleware import get_bbox_by_hash, get_latlon
 from CTRegisterMicroserviceFlask import request_to_microservice
 
@@ -160,6 +160,8 @@ def query(dataset_id, bbox):
             if special_query_type == 'st_histogram':
                 response = QueryService.get_histogram(scenario, model, years, query_indicator, bbox)
             elif special_query_type == 'temporal_series':
+                if all(coord is None for coord in bbox):
+                    raise CoordinatesNeeded(message='No coordinates provided')
                 response = QueryService.get_temporal_series(scenario, model, years, query_indicator, bbox)
         else:
             for idx in range(0, len(select)):
@@ -167,13 +169,20 @@ def query(dataset_id, bbox):
                     del select[idx]
             if len(select) == 0:
                 raise InvalidField(message='Invalid Fields')
-            logging.info(select)
+            logging.debug("select")
+            logging.debug(scenario)
+            logging.debug(model)
+            logging.debug(years)
+            logging.debug(bbox)
+            logging.debug(select)
             response = QueryService.get_stats(scenario, model, years, bbox, select)
     except InvalidField as e:
         return error(status=400, detail=e.message)
     except PeriodNotValid as e:
         return error(status=400, detail=e.message)
     except GeostoreNeeded as e:
+        return error(status=400, detail=e.message)
+    except CoordinatesNeeded as e:
         return error(status=400, detail=e.message)
     return jsonify(data=response), 200
 

@@ -42,3 +42,6 @@ class InvalidField(Error):
 
 class InvalidCoordinates(Error):
     pass
+
+class CoordinatesNeeded(Error):
+    pass

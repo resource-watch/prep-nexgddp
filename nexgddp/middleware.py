@@ -40,3 +40,12 @@ def get_latlon(func):
             kwargs["bbox"] = bbox
         return func(*args, **kwargs)
     return wrapper
+
+# def get_geoaggr(func):
+#     @wraps(func)
+#     def wrapper(*args, **kwargs):
+
+#         geoaggr_funcs = request.args.get('geoagg')
+        
+#         return func(*args, **kwargs)
+#     return wrapper
