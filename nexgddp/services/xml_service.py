@@ -28,3 +28,22 @@ class XMLService(object):
         except Exception as e:
             raise XMLParserError(message=str(e))
         return fields
+
+    @staticmethod
+    def get_domain(xml):
+        logging.info('Parsing XML domain info')
+        domain = {}
+        logging.debug("Beggining loop")
+        try:
+            root = ET.fromstring(xml)
+            for cd in root.findall('{http://www.opengis.net/wcs/2.0}CoverageDescription'):
+                for bb in cd.findall('{http://www.opengis.net/gml/3.2}boundedBy'):
+                    for envelope in bb:
+                        for corner in envelope:
+                            domain_tag = corner.tag.rsplit('}')[-1]
+                            domain_attributes = corner.text.replace('"', '').rsplit(' ')
+                            domain[domain_tag] = domain_attributes
+
+        except Exception as e:
+            raise XMLParserError(message=str(e))
+        return domain

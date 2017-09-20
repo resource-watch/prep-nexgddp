@@ -7,6 +7,7 @@ import tempfile
 from requests import Request, Session
 from nexgddp.errors import SqlFormatError, PeriodNotValid, TableNameNotValid, GeostoreNeeded
 from nexgddp.helpers.gdal_helper import GdalHelper
+from nexgddp.services.xml_service import XMLService
 from CTRegisterMicroserviceFlask import request_to_microservice
 
 from osgeo import gdal, gdalnumeric
@@ -42,7 +43,6 @@ class QueryService(object):
                 os.remove(os.path.join('/tmp', raster_filename))
         return map(float, processed_data)
         return results
-
 
     @staticmethod
     def get_histogram(scenario, model, years, indicator, bbox):
@@ -147,7 +147,8 @@ class QueryService(object):
         response = session.send(prepped)
         if response.status_code == 404:
             raise TableNameNotValid('Table Name Not Valid')
-        return response.text
+        output = response.text
+        return output
 
     @staticmethod
     def convert(query):
@@ -185,3 +186,28 @@ class QueryService(object):
                 }
             }
         }
+
+    @staticmethod
+    def get_domain(scenario, model):
+        logging.info(f"Obtaining domain for the scenario {scenario}, and model {model}")
+        domain_xml = QueryService.get_rasdaman_fields(scenario, model)
+        domain = XMLService.get_domain(domain_xml)
+        domain_data = {
+            "lat": {
+                "max": domain.get('upperCorner')[0],
+                "min": domain.get('lowerCorner')[0]
+            },
+            "lon": {
+                "max": domain.get('upperCorner')[1],
+                "min": domain.get('lowerCorner')[1]
+            },
+            "year": {
+                "max": domain.get('upperCorner')[2],
+                "min": domain.get('lowerCorner')[2]
+            }
+        }
+
+        logging.debug("Domain data")
+        logging.debug(domain_data)
+
+        return domain_data

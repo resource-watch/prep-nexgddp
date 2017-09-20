@@ -45,9 +45,6 @@ def get_sql_select(json_sql):
         select_literals  = list(map(is_literal,  select_sql))
         select = list(filter(None, select_functions + select_literals))
 
-        logging.debug("Select")
-        logging.debug(select)
-
     # Reductions and temporal series have different cardinality - can't be both at the same time
     if not all(val is None for val in select_functions) and not all(val is None for val in select_literals):
         logging.debug("Provided functions and literals at the same time")
@@ -86,23 +83,6 @@ def get_years(json_sql):
             years = years
         return years
 
-
-# def get_query_type(select):
-#     query_type = None
-#     query_indicator = None
-#     for clause in select:
-#         query_indicator = clause.get('argument')
-#         if clause.get('function') == 'st_histogram':
-#             query_type = 'st_histogram'
-#             break
-#         elif clause.get('function') == 'temporal_series':
-#             query_type = 'temporal_series'
-#             break
-#         else:
-#             pass
-#     return query_type, query_indicator
-
-
 @nexgddp_endpoints.route('/query/<dataset_id>', methods=['POST'])
 @get_bbox_by_hash
 @get_latlon
@@ -115,7 +95,6 @@ def query(dataset_id, bbox):
     table_name = dataset.get('attributes').get('tableName')
     scenario, model = table_name.rsplit('/')
     sql = request.args.get('sql', None) or request.get_json().get('sql', None)
-
     if not sql:
         return error(status=400, detail='sql must be provided')
 
@@ -132,31 +111,50 @@ def query(dataset_id, bbox):
         return error(status=500, detail='Generic Error')
 
     # Get select
+    # This is what a select looks like - only will have aggr funcs or 'temporal_series' though
+    # [
+    #     {'function': 'avg',             'argument': 'prmaxday'},
+    #     {'function': 'temporal_series', 'argument': 'prmaxday'},
+    #     {'function': 'temporal_series', 'argument': 'pr99p'}
+    # ]
+
     try:
         select = get_sql_select(json_sql)
+        logging.debug("Select")
+        logging.debug(select)
     except Exception as e:
         return error(status=400, detail='Invalid Select')
 
-    # Get years
-    years = get_years(json_sql)
-    if len(years) == 0:
-        return error(status=400, detail='Period of time must be set')
-
-    # Query type
-    # special_query_type, query_indicator = get_query_type(select)
 
     # Fields
     fields_xml = QueryService.get_rasdaman_fields(scenario, model)
     fields = XMLService.get_fields(fields_xml)
     logging.debug("Fields")
     fields.update({'year': {'type': 'date'}})
-    logging.debug(fields)
-    # This is what a select looks like - only aggr funcs or 'temporal_series' though
-    # [
-    #     {'function': 'avg',             'argument': 'prmaxday'},
-    #     {'function': 'temporal_series', 'argument': 'prmaxday'},
-    #     {'function': 'temporal_series', 'argument': 'pr99p'}
-    # ]
+
+    
+    # Prior to validating dates, the [max|min](year) case has to be dealt with:
+    def is_year(clause):
+        if (clause.get('function') == 'max' or  clause.get('function') == 'min') and clause.get('argument') == 'year':
+            return True
+        else:
+            return False
+    select_year = all(list(map(is_year, select)))
+
+    if select_year == True:
+        result = {}
+        domain = QueryService.get_domain(scenario, model)
+        for element in select:
+            result[f"{element['function']}({element['argument']})"] = domain.get(element['argument']).get(element['function'])
+        logging.debug(result)
+        return jsonify(data=[result]), 200
+
+    if not bbox:
+        return error(status=400, detail='No coordinates provided. Include geostore or lat & lon')
+    # Get years
+    years = get_years(json_sql)
+    if len(years) == 0:
+        return error(status=400, detail='Period of time must be set')
 
     results = {}
     for element in select:
@@ -171,7 +169,7 @@ def query(dataset_id, bbox):
             else:
                 function = element['function']
                 indicator = element['argument']
-                results[indicator] = QueryService.get_stats(scenario, model, years, indicator, bbox, function)
+                results[f"{function}({indicator})"] = QueryService.get_stats(scenario, model, years, indicator, bbox, function)
         except InvalidField as e:
             return error(status=400, detail=e.message)
         except PeriodNotValid as e:
@@ -186,31 +184,6 @@ def query(dataset_id, bbox):
     output = [dict(zip(results, col)) for col in zip(*results.values())]
     # return jsonify(data=response), 200
     return jsonify(data=output), 200
-    
-    # try:
-    #     if special_query_type:
-    #         if query_indicator not in fields:
-    #             raise InvalidField(message='Invalid Fields')
-    #         if special_query_type == 'st_histogram':
-    #             response = QueryService.get_histogram(scenario, model, years, query_indicator, bbox)
-    #         elif special_query_type == 'temporal_series':
-    #             if all(coord is None for coord in bbox):
-    #                 raise CoordinatesNeeded(message='No coordinates provided')
-    #             response = QueryService.get_temporal_series(scenario, model, years, query_indicator, bbox)
-    #     else:
-    #         for idx in range(0, len(select)):
-    #             if select[idx].get('argument') not in fields:
-    #                 del select[idx]
-    #         if len(select) == 0:
-    #             raise InvalidField(message='Invalid Fields')
-    #         logging.debug("select")
-    #         logging.debug(scenario)
-    #         logging.debug(model)
-    #         logging.debug(years)
-    #         logging.debug(bbox)
-    #         logging.debug(select)
-    #        response = QueryService.get_stats(scenario, model, years, bbox, select)
-    #except 
 
 
 @nexgddp_endpoints.route('/fields/<dataset_id>', methods=['POST'])

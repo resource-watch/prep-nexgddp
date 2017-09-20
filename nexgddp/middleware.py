@@ -32,8 +32,13 @@ def get_latlon(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
         geostore = request.args.get('geostore', None)
+        lat = request.args.get('lat', None)
+        lon = request.args.get('lon', None)
+        if not geostore and not (lat and lon):
+            kwargs["bbox"] = None
+            return func(*args, **kwargs)
         if not geostore:
-            bbox = [request.args.get('lat', None), request.args.get('lon', None)]
+            bbox = [lat, lon]
             logging.debug("bbox")
             logging.debug(bbox)
             logging.debug(all(bbox))
