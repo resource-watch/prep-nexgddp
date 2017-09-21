@@ -181,9 +181,6 @@ def query(dataset_id, bbox):
             else:
                 function = element['function']
                 indicator = element['argument']
-                alias = element['alias']
-                logging.debug("ALIAS")
-                logging.debug(alias)
                 results[element['alias'] if element['alias'] else f"{function}({indicator})"] = QueryService.get_stats(scenario, model, years, indicator, bbox, function)
         except InvalidField as e:
             return error(status=400, detail=e.message)
