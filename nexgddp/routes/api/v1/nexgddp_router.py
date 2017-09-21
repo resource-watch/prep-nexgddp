@@ -10,6 +10,7 @@ from nexgddp.errors import SqlFormatError, PeriodNotValid, TableNameNotValid, Ge
 from nexgddp.middleware import get_bbox_by_hash, get_latlon
 from CTRegisterMicroserviceFlask import request_to_microservice
 import datetime
+import dateutil.parser
 
 nexgddp_endpoints = Blueprint('nexgddp_endpoints', __name__)
 
@@ -160,8 +161,8 @@ def query(dataset_id, bbox):
     if len(years) == 0:
         domain = QueryService.get_domain(scenario, model)
         years = list(range(
-            domain['year']['min'],
-            domain['year']['max'] + 1
+            int(dateutil.parser.parse(domain['year']['min']).year),
+            int(dateutil.parser.parse(domain['year']['max']).year + 1)
         ))
 
         logging.debug(years)
