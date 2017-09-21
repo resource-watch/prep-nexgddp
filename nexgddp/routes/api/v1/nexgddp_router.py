@@ -131,8 +131,9 @@ def query(dataset_id, bbox):
     # Fields
     fields_xml = QueryService.get_rasdaman_fields(scenario, model)
     fields = XMLService.get_fields(fields_xml)
-    logging.debug("Fields")
     fields.update({'all': {'type': 'array'}})
+    logging.debug("Fields")
+    logging.debug(fields)
 
     
     # Prior to validating dates, the [max|min](year) case has to be dealt with:
@@ -159,7 +160,7 @@ def query(dataset_id, bbox):
         domain = QueryService.get_domain(scenario, model)
         years = list(range(
             domain['year']['min'],
-            domain['year']['max']
+            domain['year']['max'] + 1
         ))
 
         logging.debug(years)
@@ -171,9 +172,10 @@ def query(dataset_id, bbox):
         try:
             if element['argument'] not in fields:
                 raise InvalidField(message='Invalid Fields')
-            if element['function'] == 'temporal_series' and element['argument'] == 'year':
+            elif element['function'] == 'temporal_series' and element['argument'] == 'year':
+                logging.debug("YEAR FIELD")
                 results['year'] = years
-            if element['function'] == 'temporal_series' and element['argument'] == 'all':
+            elif element['function'] == 'temporal_series' and element['argument'] == 'all':
                 query_results = QueryService.get_all_data(scenario, model, years, bbox)
                 return jsonify(data = query_results), 200
             elif element['function'] == 'temporal_series':
