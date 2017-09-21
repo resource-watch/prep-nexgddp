@@ -145,7 +145,7 @@ def query(dataset_id, bbox):
         result = {}
         domain = QueryService.get_domain(scenario, model)
         for element in select:
-            result[f"{element['function']}({element['argument']})"] = domain.get(element['argument']).get(element['function'])
+            result[element['alias'] if element['alias'] else f"{element['function']}({element['argument']})"] = domain.get(element['argument']).get(element['function'])
         logging.debug(result)
         return jsonify(data=[result]), 200
 
