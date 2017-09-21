@@ -5,8 +5,9 @@ from flask import request
 
 from nexgddp.routes.api import error
 from nexgddp.services.geostore_service import GeostoreService
-from nexgddp.errors import GeostoreNotFound
+from nexgddp.errors import GeostoreNotFound, InvalidCoordinates
 
+import logging
 
 def get_bbox_by_hash(func):
     """Get geodata"""
@@ -24,3 +25,32 @@ def get_bbox_by_hash(func):
         kwargs["bbox"] = bbox
         return func(*args, **kwargs)
     return wrapper
+
+
+def get_latlon(func):
+    """Get geodata"""
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        geostore = request.args.get('geostore', None)
+        lat = request.args.get('lat', None)
+        lon = request.args.get('lon', None)
+        if not geostore and not (lat and lon):
+            kwargs["bbox"] = None
+            return func(*args, **kwargs)
+        if not geostore:
+            bbox = [lat, lon]
+            logging.debug("bbox")
+            logging.debug(bbox)
+            logging.debug(all(bbox))
+            kwargs["bbox"] = bbox
+        return func(*args, **kwargs)
+    return wrapper
+
+# def get_geoaggr(func):
+#     @wraps(func)
+#     def wrapper(*args, **kwargs):
+
+#         geoaggr_funcs = request.args.get('geoagg')
+        
+#         return func(*args, **kwargs)
+#     return wrapper
