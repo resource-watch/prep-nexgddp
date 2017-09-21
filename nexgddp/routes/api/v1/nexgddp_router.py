@@ -25,6 +25,8 @@ def callback_to_dataset(body):
 
 def get_sql_select(json_sql):
     select_sql = json_sql.get('select')
+    logging.debug("SELECT SQL")
+    logging.debug(select_sql)
     select = None
     if len(select_sql) == 1 and select_sql[0].get('value') == '*':
         select = [{'function': 'temporal_series', 'argument': 'all'}]
@@ -35,14 +37,16 @@ def get_sql_select(json_sql):
             if clause.get('type') == 'function' and clause.get('arguments') and len(clause.get('arguments')) > 0:
                 return {
                     'function': clause.get('value'),
-                    'argument': clause.get('arguments')[0].get('value')
+                    'argument': clause.get('arguments')[0].get('value'),
+                    'alias': clause.get('alias', None)
                 }
 
         def is_literal(clause):
             if clause.get('type') == 'literal':
                 return {
                     'function': 'temporal_series',
-                    'argument': clause.get('value')
+                    'argument': clause.get('value'),
+                    'alias': clause.get('alias', None)
                 }
         
         select_functions = list(map(is_function, select_sql))
@@ -113,15 +117,6 @@ def query(dataset_id, bbox):
     except Exception as e:
         logging.error('[ROUTER]: '+str(e))
         return error(status=500, detail='Generic Error')
-
-    # Get select
-    # This is what a select looks like - only will have aggr funcs or 'temporal_series' though
-    # [
-    #     {'function': 'avg',             'argument': 'prmaxday'},
-    #     {'function': 'temporal_series', 'argument': 'prmaxday'},
-    #     {'function': 'temporal_series', 'argument': 'pr99p'}
-    # ]
-
     try:
         select = get_sql_select(json_sql)
         logging.debug("Select")
@@ -171,21 +166,25 @@ def query(dataset_id, bbox):
 
     results = {}
     for element in select:
+        logging.debug(f"Analyzing element {str(element)}")
         try:
             if element['argument'] not in fields:
                 raise InvalidField(message='Invalid Fields')
             elif element['function'] == 'temporal_series' and element['argument'] == 'year':
-                results['year'] = map(lambda x: datetime.datetime(x, 1, 1).isoformat(), years)
+                results[element['alias'] if element['alias'] else 'year'] = map(lambda x: datetime.datetime(x, 1, 1).isoformat(), years)
             elif element['function'] == 'temporal_series' and element['argument'] == 'all':
                 query_results = QueryService.get_all_data(scenario, model, years, bbox)
                 return jsonify(data = query_results), 200
             elif element['function'] == 'temporal_series':
                 indicator = element['argument']
-                results[indicator] = QueryService.get_temporal_series(scenario, model, years, indicator, bbox)
+                results[element['alias'] if element['alias'] else indicator] = QueryService.get_temporal_series(scenario, model, years, indicator, bbox)
             else:
                 function = element['function']
                 indicator = element['argument']
-                results[f"{function}({indicator})"] = QueryService.get_stats(scenario, model, years, indicator, bbox, function)
+                alias = element['alias']
+                logging.debug("ALIAS")
+                logging.debug(alias)
+                results[element['alias'] if element['alias'] else f"{function}({indicator})"] = QueryService.get_stats(scenario, model, years, indicator, bbox, function)
         except InvalidField as e:
             return error(status=400, detail=e.message)
         except PeriodNotValid as e:
