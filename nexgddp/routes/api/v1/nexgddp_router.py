@@ -9,6 +9,7 @@ from nexgddp.services.xml_service import XMLService
 from nexgddp.errors import SqlFormatError, PeriodNotValid, TableNameNotValid, GeostoreNeeded, XMLParserError, InvalidField, CoordinatesNeeded
 from nexgddp.middleware import get_bbox_by_hash, get_latlon
 from CTRegisterMicroserviceFlask import request_to_microservice
+import datetime
 
 nexgddp_endpoints = Blueprint('nexgddp_endpoints', __name__)
 
@@ -173,8 +174,7 @@ def query(dataset_id, bbox):
             if element['argument'] not in fields:
                 raise InvalidField(message='Invalid Fields')
             elif element['function'] == 'temporal_series' and element['argument'] == 'year':
-                logging.debug("YEAR FIELD")
-                results['year'] = years
+                results['year'] = map(lambda x: datetime.datetime(x, 1, 1).isoformat(), years)
             elif element['function'] == 'temporal_series' and element['argument'] == 'all':
                 query_results = QueryService.get_all_data(scenario, model, years, bbox)
                 return jsonify(data = query_results), 200

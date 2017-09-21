@@ -256,8 +256,8 @@ class QueryService(object):
                 "min": domain.get('lowerCorner')[1]
             },
             "year": {
-                "max": dateutil.parser.parse(domain.get('upperCorner')[2]).year,
-                "min": dateutil.parser.parse(domain.get('lowerCorner')[2]).year
+                "max": dateutil.parser.parse(domain.get('upperCorner')[2]).isoformat(),
+                "min": dateutil.parser.parse(domain.get('lowerCorner')[2]).isoformat()
             }
         }
 
