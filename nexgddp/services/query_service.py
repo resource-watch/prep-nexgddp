@@ -11,7 +11,7 @@ from nexgddp.errors import SqlFormatError, PeriodNotValid, TableNameNotValid, Ge
 from nexgddp.helpers.gdal_helper import GdalHelper
 from nexgddp.services.xml_service import XMLService
 from CTRegisterMicroserviceFlask import request_to_microservice
-
+import dateutil.parser
 from osgeo import gdal, gdalnumeric
 
 RASDAMAN_URL = os.getenv('RASDAMAN_URL')
@@ -138,7 +138,7 @@ class QueryService(object):
                     logging.debug(data_dict)
                     results.append(data_dict)
                 for i in range(len(years)):
-                    results[i]['year'] = years[i]
+                    results[i]['year'] = dateutil.parser.parse(f"{years[i]}-01-01").isoformat()
                 logging.debug(results)
             finally:
                 source_raster = None
