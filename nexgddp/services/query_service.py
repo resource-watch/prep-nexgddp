@@ -30,6 +30,7 @@ class QueryService(object):
             raise GeostoreNeeded("No latitude and longitude provided")
         else:
             bbox_str = f",Lat({bbox[0]}),Long({bbox[1]})"
+            # IMPORTANT - Rasdaman tablename must be in this format ->
             query = f"for cov in ({scenario}_{model}_processed) return encode( {function}((cov.{indicator})[ ansi(\"{year_min}\":\"{year_max}\") {bbox_str}]), \"CSV\")"
             logging.info('Running the query ' + query)
             raster_filename = QueryService.get_rasdaman_query(query)
@@ -92,6 +93,57 @@ class QueryService(object):
                 # Removing the raster
                 os.remove(os.path.join('/tmp', raster_filename))
         return map(float, processed_data)
+    
+    @staticmethod
+    def get_all_data(scenario, model, years, bbox):
+        logging.info('[QueryService] Getting * data from rasdaman')
+        year_min = sorted(years)[0]
+        year_max = sorted(years)[-1]
+        logging.info(year_min)
+        logging.info(year_max)
+        results = []
+        if bbox == []:
+            raise GeostoreNeeded("No latitude and longitude provided")
+        else:
+            bbox_str = f",Lat({bbox[0]}),Long({bbox[1]})"
+            query = f"for cov in ({scenario}_{model}_processed) return encode( (cov)[ ansi(\"{year_min}\":\"{year_max}\") {bbox_str}], \"CSV\")"
+            logging.info('Running the query ' + query)
+            raster_filename = QueryService.get_rasdaman_query(query)
+            try:
+                output = {}
+                datafile = open(raster_filename, "r")
+                raw_data = datafile.read()
+                processed_data = raw_data.replace('{', '').replace('}', '').split(',')
+
+                fields_xml = QueryService.get_rasdaman_fields(scenario, model)
+                fields = XMLService.get_fields(fields_xml)
+                fields_without_year = dict((i,fields[i]) for i in fields if i!='year')
+                logging.debug('fields  - no year')
+                logging.debug(fields_without_year)
+                logging.debug('processed_data')
+                logging.debug(processed_data)
+                varnames = list()
+                for key in fields_without_year:
+                    varnames.append(key)
+
+                logging.debug("Varnames")
+                logging.debug(varnames)
+                results = list()
+                for element in processed_data:
+                    data_array = list( map(float, element.replace('"', '').split(' ')))
+                    data_dict = dict(zip(varnames, data_array))
+                    logging.debug('data_dict')
+                    logging.debug(data_dict)
+                    results.append(data_dict)
+                for i in range(len(years)):
+                    results[i]['year'] = years[i]
+                logging.debug(results)
+            finally:
+                source_raster = None
+                # Removing the raster
+                os.remove(os.path.join('/tmp', raster_filename))
+        return results
+
 
 
     @staticmethod

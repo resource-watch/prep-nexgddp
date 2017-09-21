@@ -25,7 +25,9 @@ def get_sql_select(json_sql):
     select_sql = json_sql.get('select')
     select = None
     if len(select_sql) == 1 and select_sql[0].get('value') == '*':
-        raise Exception() # No * allowed
+        select = [{'function': 'temporal_series', 'argument': 'all'}]
+        return select
+        # raise Exception() # No * allowed
     else:
         def is_function(clause):
             if clause.get('type') == 'function' and clause.get('arguments') and len(clause.get('arguments')) > 0:
@@ -130,7 +132,7 @@ def query(dataset_id, bbox):
     fields_xml = QueryService.get_rasdaman_fields(scenario, model)
     fields = XMLService.get_fields(fields_xml)
     logging.debug("Fields")
-    # fields.update({'year': {'type': 'date'}})
+    fields.update({'all': {'type': 'array'}})
 
     
     # Prior to validating dates, the [max|min](year) case has to be dealt with:
@@ -163,6 +165,9 @@ def query(dataset_id, bbox):
                 raise InvalidField(message='Invalid Fields')
             if element['function'] == 'temporal_series' and element['argument'] == 'year':
                 results['year'] = years
+            if element['function'] == 'temporal_series' and element['argument'] == 'all':
+                query_results = QueryService.get_all_data(scenario, model, years, bbox)
+                return jsonify(data = query_results), 200
             elif element['function'] == 'temporal_series':
                 indicator = element['argument']
                 results[indicator] = QueryService.get_temporal_series(scenario, model, years, indicator, bbox)
