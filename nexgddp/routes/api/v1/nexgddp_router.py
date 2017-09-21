@@ -156,7 +156,15 @@ def query(dataset_id, bbox):
     # Get years
     years = get_years(json_sql)
     if len(years) == 0:
-        return error(status=400, detail='Period of time must be set')
+        domain = QueryService.get_domain(scenario, model)
+        years = list(range(
+            domain['year']['min'],
+            domain['year']['max']
+        ))
+
+        logging.debug(years)
+        logging.debug(domain)
+        # return error(status=400, detail='Period of time must be set')
 
     results = {}
     for element in select:

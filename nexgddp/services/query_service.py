@@ -4,6 +4,8 @@ import json
 import os
 import logging
 import tempfile
+import datetime
+import dateutil.parser
 from requests import Request, Session
 from nexgddp.errors import SqlFormatError, PeriodNotValid, TableNameNotValid, GeostoreNeeded
 from nexgddp.helpers.gdal_helper import GdalHelper
@@ -254,8 +256,8 @@ class QueryService(object):
                 "min": domain.get('lowerCorner')[1]
             },
             "year": {
-                "max": domain.get('upperCorner')[2],
-                "min": domain.get('lowerCorner')[2]
+                "max": dateutil.parser.parse(domain.get('upperCorner')[2]).year,
+                "min": dateutil.parser.parse(domain.get('lowerCorner')[2]).year
             }
         }
 
