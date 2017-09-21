@@ -130,7 +130,7 @@ def query(dataset_id, bbox):
     fields_xml = QueryService.get_rasdaman_fields(scenario, model)
     fields = XMLService.get_fields(fields_xml)
     logging.debug("Fields")
-    fields.update({'year': {'type': 'date'}})
+    # fields.update({'year': {'type': 'date'}})
 
     
     # Prior to validating dates, the [max|min](year) case has to be dealt with:

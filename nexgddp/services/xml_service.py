@@ -22,9 +22,10 @@ class XMLService(object):
                             for field_spec in field.findall('{http://www.opengis.net/swe/2.0}Quantity'):
                                 for field_spec_uom in field_spec.findall('{http://www.opengis.net/swe/2.0}uom'):
                                     fields[field_name] = {
-                                        'type': 'Quantity',
+                                        'type': 'number',
                                         'uom': field_spec_uom.get('code')
                                     }
+            fields['year'] = {'type': 'date'}
         except Exception as e:
             raise XMLParserError(message=str(e))
         return fields
