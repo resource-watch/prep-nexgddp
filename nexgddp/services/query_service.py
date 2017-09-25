@@ -74,8 +74,8 @@ class QueryService(object):
     @staticmethod
     def get_temporal_series(scenario, model, years, indicator, bbox):
         logging.info('[QueryService] Getting temporal series from rasdaman')
-        year_min = sorted(years)[0]
-        year_max = sorted(years)[-1]
+        year_min = sorted(years)[0].replace("'", '') if type(sorted(years)[0]) == 'string' else sorted(years)[0]
+        year_max = sorted(years)[-1].replace("'", '') if type(sorted(years)[-1]) == 'string' else sorted(years)[-1]
         logging.info(year_min)
         logging.info(year_max)
         results = []
@@ -83,7 +83,8 @@ class QueryService(object):
             raise GeostoreNeeded("No latitude and longitude provided")
         else:
             bbox_str = f",Lat({bbox[0]}),Long({bbox[1]})"
-            query = f"for cov in ({scenario}_{model}_processed) return encode( (cov.{indicator})[ ansi(\"{year_min}\":\"{year_max}\") {bbox_str}], \"CSV\")"
+            ansidate_str = f"ansi(\"{year_min}\":\"{year_max}\")" if year_min != year_max else f"ansi(\"{year_min}\")"
+            query = f"for cov in ({scenario}_{model}_processed) return encode( (cov.{indicator})[ {ansidate_str} {bbox_str}], \"CSV\")"
             logging.info('Running the query ' + query)
             raster_filename = QueryService.get_rasdaman_query(query)
             try:
@@ -101,8 +102,6 @@ class QueryService(object):
         logging.info('[QueryService] Getting * data from rasdaman')
         year_min = sorted(years)[0]
         year_max = sorted(years)[-1]
-        logging.info(year_min)
-        logging.info(year_max)
         results = []
         if bbox == []:
             raise GeostoreNeeded("No latitude and longitude provided")
@@ -116,37 +115,36 @@ class QueryService(object):
                 datafile = open(raster_filename, "r")
                 raw_data = datafile.read()
                 processed_data = raw_data.replace('{', '').replace('}', '').split(',')
-
                 fields_xml = QueryService.get_rasdaman_fields(scenario, model)
                 fields = XMLService.get_fields(fields_xml)
                 fields_without_year = dict((i,fields[i]) for i in fields if i!='year')
-                logging.debug('fields  - no year')
-                logging.debug(fields_without_year)
-                logging.debug('processed_data')
-                logging.debug(processed_data)
                 varnames = list()
                 for key in fields_without_year:
                     varnames.append(key)
 
-                logging.debug("Varnames")
-                logging.debug(varnames)
-                results = list()
+                logging.debug(f"varnames: {varnames}")
+                results = [{} for _ in range(len(years))]
+                ansi_years = list(map(lambda x: dateutil.parser.parse(f"{x}-01-01").isoformat(), years))
+                logging.debug(ansi_years)
+                logging.debug(f"years: {years}")
+                logging.debug(f"processed_data: {processed_data}")
+                data_array = list()
+
                 for element in processed_data:
-                    data_array = list( map(float, element.replace('"', '').split(' ')))
-                    data_dict = dict(zip(varnames, data_array))
-                    logging.debug('data_dict')
-                    logging.debug(data_dict)
-                    results.append(data_dict)
+                    data_array.append(list( map(float, element.replace('"', '').split(' '))))
+                    logging.debug(data_array)
+
+                processed_obj = list(map(lambda x: dict(zip(varnames, x)), data_array))
+                # logging.debug(processed_obj)
+                    
                 for i in range(len(years)):
                     results[i]['year'] = dateutil.parser.parse(f"{years[i]}-01-01").isoformat()
-                logging.debug(results)
+                    results[i].update(processed_obj[i])
             finally:
                 source_raster = None
-                # Removing the raster
+                # Removing the raster. Really important!
                 os.remove(os.path.join('/tmp', raster_filename))
         return results
-
-
 
     @staticmethod
     def get_rasdaman_query(query):
@@ -260,8 +258,4 @@ class QueryService(object):
                 "min": dateutil.parser.parse(domain.get('lowerCorner')[2]).isoformat()
             }
         }
-
-        logging.debug("Domain data")
-        logging.debug(domain_data)
-
         return domain_data
