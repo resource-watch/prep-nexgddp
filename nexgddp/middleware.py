@@ -39,9 +39,6 @@ def get_latlon(func):
             return func(*args, **kwargs)
         if not geostore:
             bbox = [lat, lon]
-            logging.debug("bbox")
-            logging.debug(bbox)
-            logging.debug(all(bbox))
             kwargs["bbox"] = bbox
         return func(*args, **kwargs)
     return wrapper

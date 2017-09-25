@@ -10,7 +10,7 @@ class XMLService(object):
 
     @staticmethod
     def get_fields(xml):
-        logging.info('Parsing XML fields')
+        logging.info('[XMLService] Parsing XML fields')
         fields = {}
         try:
             root = ET.fromstring(xml)
@@ -32,9 +32,8 @@ class XMLService(object):
 
     @staticmethod
     def get_domain(xml):
-        logging.info('Parsing XML domain info')
+        logging.info('[XMLService] Parsing XML domain info')
         domain = {}
-        logging.debug("Beggining loop")
         try:
             root = ET.fromstring(xml)
             for cd in root.findall('{http://www.opengis.net/wcs/2.0}CoverageDescription'):

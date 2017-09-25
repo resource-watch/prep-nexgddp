@@ -1,7 +1,6 @@
 """API ROUTER"""
 
 import logging
-
 from flask import jsonify, request, Blueprint, Response
 from nexgddp.routes.api import error
 from nexgddp.services.query_service import QueryService
@@ -25,8 +24,6 @@ def callback_to_dataset(body):
 
 def get_sql_select(json_sql):
     select_sql = json_sql.get('select')
-    logging.debug("SELECT SQL")
-    logging.debug(select_sql)
     select = None
     if len(select_sql) == 1 and select_sql[0].get('value') == '*':
         select = [{'function': 'temporal_series', 'argument': 'all'}]
@@ -55,22 +52,40 @@ def get_sql_select(json_sql):
 
     # Reductions and temporal series have different cardinality - can't be both at the same time
     if not all(val is None for val in select_functions) and not all(val is None for val in select_literals):
-        logging.debug("Provided functions and literals at the same time")
+        logging.error("Provided functions and literals at the same time")
         raise Exception()
     # And it's neccesary to select something
     if select == [None] or len(select) == 0 or select is None:
         raise Exception()
     return select
 
+def parse_year(value):
+    if type(value) is int:
+        return value
+    else:
+        try:
+            result = dateutil.parser.parse(value).year
+            return int(result)
+        except Error as e:
+            raise PeriodNotValid("Supplied dates are invalid")
+            
 
 def get_years(json_sql):
     where_sql = json_sql.get('where', None)
+    logging.debug(f"where_sql: {where_sql}")
     if where_sql is None:
         return []
     years = []
     if where_sql.get('type', None) == 'between':
-        years = list(map(lambda argument: argument.get('value'), where_sql.get('arguments')))
-        years = list(range(years[0], years[1]+1))
+        years = list(
+            map(
+                lambda argument: parse_year(argument.get('value')),
+                where_sql.get('arguments')
+            )
+        )
+        logging.debug(years)
+        years = list(range(parse_year(years[0]), parse_year(years[1])+1))
+        logging.debug(years)
         return years
     elif where_sql.get('type', None) == 'conditional' or where_sql.get('type', None) == 'operator':
         def get_years_node(node):
@@ -82,11 +97,13 @@ def get_years(json_sql):
                 if node.get('type') == 'conditional':
                     get_years_node(node.get('left'))
                     get_years_node(node.get('right'))
-
         get_years_node(where_sql)
         years.sort()
         if len(years) > 1:
-            years = list(range(years[0], years[1]+1))
+            years = list(range(
+                parse_year(years[0]),
+                parse_year(years[1])+1 )
+            )
         else:
             years = years
         return years
@@ -109,8 +126,6 @@ def query(dataset_id, bbox):
     # convert
     try:
         _, json_sql = QueryService.convert(sql)
-        logging.debug("json_sql")
-        logging.debug(json_sql)
     except SqlFormatError as e:
         logging.error(e.message)
         return error(status=500, detail=e.message)
@@ -129,9 +144,6 @@ def query(dataset_id, bbox):
     fields_xml = QueryService.get_rasdaman_fields(scenario, model)
     fields = XMLService.get_fields(fields_xml)
     fields.update({'all': {'type': 'array'}})
-    logging.debug("Fields")
-    logging.debug(fields)
-
     
     # Prior to validating dates, the [max|min](year) case has to be dealt with:
     def is_year(clause):
@@ -139,6 +151,7 @@ def query(dataset_id, bbox):
             return True
         else:
             return False
+    # All statements in the select must have the prior form
     select_year = all(list(map(is_year, select)))
 
     if select_year == True:
@@ -146,32 +159,28 @@ def query(dataset_id, bbox):
         domain = QueryService.get_domain(scenario, model)
         for element in select:
             result[element['alias'] if element['alias'] else f"{element['function']}({element['argument']})"] = domain.get(element['argument']).get(element['function'])
-        logging.debug(result)
         return jsonify(data=[result]), 200
-
+    
     if not bbox:
         return error(status=400, detail='No coordinates provided. Include geostore or lat & lon')
     # Get years
     years = get_years(json_sql)
     if len(years) == 0:
         domain = QueryService.get_domain(scenario, model)
+        logging.debug(f"domain: {domain}")
         years = list(range(
-            int(dateutil.parser.parse(domain['year']['min']).year),
-            int(dateutil.parser.parse(domain['year']['max']).year + 1)
+            int(dateutil.parser.parse(domain['year']['min'], fuzzy_with_tokens=True)[0].year),
+            int(dateutil.parser.parse(domain['year']['max'], fuzzy_with_tokens=True)[0].year + 1)
         ))
-
-        logging.debug(years)
-        logging.debug(domain)
         # return error(status=400, detail='Period of time must be set')
 
     results = {}
     for element in select:
-        logging.debug(f"Analyzing element {str(element)}")
         try:
             if element['argument'] not in fields:
                 raise InvalidField(message='Invalid Fields')
             elif element['function'] == 'temporal_series' and element['argument'] == 'year':
-                results[element['alias'] if element['alias'] else 'year'] = map(lambda x: datetime.datetime(x, 1, 1).isoformat(), years)
+                results[element['alias'] if element['alias'] else 'year'] = map(lambda x: datetime.datetime(parse_year(x), 1, 1).isoformat(), years)
             elif element['function'] == 'temporal_series' and element['argument'] == 'all':
                 query_results = QueryService.get_all_data(scenario, model, years, bbox)
                 return jsonify(data = query_results), 200
@@ -189,10 +198,7 @@ def query(dataset_id, bbox):
         except GeostoreNeeded as e:
             return error(status=400, detail=e.message)
         except CoordinatesNeeded as e:
-            return error(status=400, detail=e.message)
-    logging.debug("Results")
-    logging.debug(results)
-
+            return error(status=400, detail=e.message) 
     output = [dict(zip(results, col)) for col in zip(*results.values())]
     # return jsonify(data=response), 200
     return jsonify(data=output), 200
