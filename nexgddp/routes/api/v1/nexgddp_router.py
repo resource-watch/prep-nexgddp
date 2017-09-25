@@ -24,6 +24,8 @@ def callback_to_dataset(body):
 
 def get_sql_select(json_sql):
     select_sql = json_sql.get('select')
+    logging.debug(f"select_sql: {select_sql}")
+    select_sql
     select = None
     if len(select_sql) == 1 and select_sql[0].get('value') == '*':
         select = [{'function': 'temporal_series', 'argument': 'all'}]
@@ -33,7 +35,7 @@ def get_sql_select(json_sql):
         def is_function(clause):
             if clause.get('type') == 'function' and clause.get('arguments') and len(clause.get('arguments')) > 0:
                 return {
-                    'function': clause.get('value'),
+                    'function': clause.get('value').lower(),
                     'argument': clause.get('arguments')[0].get('value'),
                     'alias': clause.get('alias', None)
                 }
