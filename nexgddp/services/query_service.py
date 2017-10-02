@@ -178,6 +178,54 @@ class QueryService(object):
             return raster_filename
 
     @staticmethod
+    def get_tile_query(bbox, coverage = 'historical_ACCESS1_0_processed', indicator = 'prmaxday', year = '1953'):
+        logging.info('[QueryService] Forming rasdaman query')
+        query_list = [ '<?xml version="1.0" encoding="UTF-8" ?>',
+                       '<ProcessCoveragesRequest xmlns="http://www.opengis.net/wcps/1.0" service="WCPS" version="1.0.0">',
+                       '<query><abstractSyntax>',
+                       'for cov in (',
+                       coverage,
+                       ') return encode(scale((cov.',
+                       indicator,
+                       ')[ansi("',
+                       year,
+                       '"),Lat(',
+                       str(bbox['lat'][0]),
+                       ':',
+                       str(bbox['lat'][1]),
+                       '),Long(',
+                       str(bbox['lon'][0]),
+                       ':',
+                       str(bbox['lon'][1]),
+                       ')], {Lat: "CRS:1"(0:255), Long: "CRS:1"(0:255)}), "GTiff")',
+                       '</abstractSyntax></query>'
+                       '</ProcessCoveragesRequest>'
+        ]
+
+        payload = ''.join(query_list)
+        logging.debug(f"payload: {payload}")
+        headers = {'Content-Type': 'application/xml'}
+        request = Request(
+            method='POST',
+            url=RASDAMAN_URL,
+            data=payload,
+            headers=headers
+        )
+        session = Session()
+        prepped = session.prepare_request(request)
+        response = session.send(prepped)
+        if response.status_code == 404:
+            raise PeriodNotValid('Period Not Valid')
+        with tempfile.NamedTemporaryFile(suffix='.tiff', delete=False) as f:
+            for chunk in response.iter_content(chunk_size=1024):
+                f.write(chunk)
+            raster_filename = f.name
+            logging.debug(f"[QueryService] Temporary raster filename: {raster_filename}")
+            f.close()
+            return raster_filename
+
+        
+    @staticmethod
     def get_rasdaman_fields(scenario, model):
         # Need to parse xml
         logging.info(f"[QueryService] Getting fields for scenario {scenario} and model {model}")

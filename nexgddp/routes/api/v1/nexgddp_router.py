@@ -258,9 +258,12 @@ def register_dataset():
 
     return jsonify(callback_to_dataset(body)), 200
 
-@nexgddp_endpoints.route('/slippy/<int:x>/<int:y>/<int:z>', methods=['GET'])
+@nexgddp_endpoints.route('/slippy/<int:z>/<int:x>/<int:y>', methods=['GET'])
 def get_tile(x, y, z):
     """Slippy map endpoint"""
     logging.info(f'Getting tile for {x} {y} {z}')
     bbox = TileService.get_bbox(x, y, z)
+    logging.debug(f"bbox: {bbox}")
+    rasterfile = QueryService.get_tile_query(bbox)
+    logging.debug(f"rasterfile: {rasterfile}")
     return jsonify(data = bbox), 200
