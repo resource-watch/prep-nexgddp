@@ -5,6 +5,7 @@ from flask import jsonify, request, Blueprint, Response
 from nexgddp.routes.api import error
 from nexgddp.services.query_service import QueryService
 from nexgddp.services.xml_service import XMLService
+from nexgddp.services.tile_service import TileService
 from nexgddp.errors import SqlFormatError, PeriodNotValid, TableNameNotValid, GeostoreNeeded, XMLParserError, InvalidField, CoordinatesNeeded
 from nexgddp.middleware import get_bbox_by_hash, get_latlon
 from CTRegisterMicroserviceFlask import request_to_microservice
@@ -256,3 +257,10 @@ def register_dataset():
     }
 
     return jsonify(callback_to_dataset(body)), 200
+
+@nexgddp_endpoints.route('/slippy/<int:x>/<int:y>/<int:z>', methods=['GET'])
+def get_tile(x, y, z):
+    """Slippy map endpoint"""
+    logging.info(f'Getting tile for {x} {y} {z}')
+    bbox = TileService.get_bbox(x, y, z)
+    return jsonify(data = bbox), 200

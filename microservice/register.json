@@ -79,5 +79,12 @@
 			"method": "POST",
 			"path": "/api/v1/nexgddp/rest-datasets/nexgddp"
 		}
+	},{
+		"path": "/v1/slippy/:x/:y/:z",
+		"method": "GET",
+		"redirect": {
+			"method": "GET",
+			"path": "/api/v1/nexgddp/slippy/:x/:y/:z"
+		}
 	}]
 }
