@@ -5,5 +5,5 @@ httmock==1.2.6
 python-dateutil==2.6.1
 mercantile==0.10.0
 pyproj==1.9.5.1
-lycon==0.1.9
+opencv-python==3.3.0.10
 colour==0.1.1

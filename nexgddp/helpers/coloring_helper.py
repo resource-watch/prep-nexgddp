@@ -3,7 +3,8 @@
 import logging
 import tempfile
 import os
-import lycon
+#import lycon
+import cv2
 import numpy as np
 from colour import Color
 
@@ -23,38 +24,36 @@ class ColoringHelper(object):
     def colorize(input_filename, color_ramp = 'spectral'):
         with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as output_filename:
             logging.debug(f"[QueryService] Coloring raster {input_filename} with ramp {color_ramp}")
+            in_matrix = cv2.imread(input_filename, cv2.IMREAD_GRAYSCALE)
+            im_color = cv2.applyColorMap(in_matrix, cv2.COLORMAP_JET)
 
-            in_matrix = lycon.load(input_filename)
-            logging.debug(f"in_matrix: {in_matrix}")
-            logging.debug(f"shape: {in_matrix.shape}")
+            cv2.imwrite(input_filename, im_color)
+            # lookup_table = ColoringHelper.get_color_lut(color_ramp)
+            # logging.debug(f"LUT: {lookup_table}")
 
-            ramp_function = ColoringHelper.get_color_ramp(color_ramp)
+            # out_matrix = cv2.LUT(in_matrix, lookup_table)
 
-            logging.debug(f"ramp_function(3): {ColoringHelper.prtobyte(ramp_function(3))}")
-
+            return input_filename
+            
             # We operate over a flattened view of the data - faster
-            first_band = in_matrix[:,:,0].reshape(-1)
-            logging.debug(f"first_band: {first_band}")
-            logging.debug(f"first_band shape: {first_band.shape}")
 
-            processed_data = []
-
-            for i, v in enumerate(first_band):
-                processed_data[i] = ramp_function(v)
-            logging.debug(f"processed_data: {processed_data}")
-
-            return output_filename
+            
 
     @staticmethod
-    def get_color_ramp(color_ramp):
-        return {
-                'spectral': np.vectorize(lambda x: list(Color('red').range_to(Color('green'), 256))[x].rgb)
-        }.get(color_ramp, np.vectorize(lambda x: x))
+    def get_color_lut(color_ramp):
+        coloring_function =  {
+                'spectral': lambda x: list(Color('red').range_to(Color('green'), 256))[x].rgb
+        }.get(color_ramp, lambda y: [y, y, y])
+
+        out_list = list(map(
+            lambda x: list(ColoringHelper.pr_to_byte(coloring_function(x))),
+            list(range(256))
+        ))
+        out_arr = np.asarray(out_list, dtype=np.dtype('uint8'))
+        return out_arr
 
     @staticmethod
-    def prtobyte(vector):
-        logging.debug("Transforming vector from prop to byte")
-        logging.debug(f"vector: {vector}")
+    def pr_to_byte(vector):
         to_byte_int = lambda v: int(v * 255)
         to_byte_int_v = np.vectorize(to_byte_int)
         return to_byte_int_v(vector)
