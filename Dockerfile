@@ -17,7 +17,10 @@ RUN apt-get update && apt-get install -yq \
     libxml2-dev \
     libxslt1-dev \
     libgdal-dev \
-    gdal-bin
+    gdal-bin \
+    make \
+    libpng-dev \
+    cmake
 
 ENV CPLUS_INCLUDE_PATH /usr/include/gdal
 ENV C_INCLUDE_PATH /usr/include/gdal

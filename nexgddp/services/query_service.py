@@ -9,6 +9,7 @@ import dateutil.parser
 from requests import Request, Session
 from nexgddp.errors import SqlFormatError, PeriodNotValid, TableNameNotValid, GeostoreNeeded
 from nexgddp.helpers.gdal_helper import GdalHelper
+from nexgddp.helpers.coloring_helper import ColoringHelper
 from nexgddp.services.xml_service import XMLService
 from CTRegisterMicroserviceFlask import request_to_microservice
 import dateutil.parser
@@ -178,31 +179,39 @@ class QueryService(object):
             return raster_filename
 
     @staticmethod
-    def get_tile_query(bbox, coverage = 'historical_ACCESS1_0_processed', indicator = 'prmaxday', year = '1953'):
+    def get_tile_query(bbox, coverage = 'historical_ACCESS1_0_processed', indicator = 'tmax5day', year = '1953'):
         logging.info('[QueryService] Forming rasdaman query')
-        query_list = [ '<?xml version="1.0" encoding="UTF-8" ?>',
-                       '<ProcessCoveragesRequest xmlns="http://www.opengis.net/wcps/1.0" service="WCPS" version="1.0.0">',
-                       '<query><abstractSyntax>',
-                       'for cov in (',
-                       coverage,
-                       ') return encode(scale((cov.',
-                       indicator,
-                       ')[ansi("',
-                       year,
-                       '"),Lat(',
-                       str(bbox['lat'][0]),
-                       ':',
-                       str(bbox['lat'][1]),
-                       '),Long(',
-                       str(bbox['lon'][0]),
-                       ':',
-                       str(bbox['lon'][1]),
-                       ')], {Lat: "CRS:1"(0:255), Long: "CRS:1"(0:255)}), "GTiff")',
-                       '</abstractSyntax></query>'
-                       '</ProcessCoveragesRequest>'
+        query_list = [
+            'for cov in (',
+            coverage,
+            ') return encode(scale((((cov.',
+            indicator,
+            ')[ansi("',
+            year,
+            '"),Lat(',
+            str(bbox['lat'][0]),
+            ':',
+            str(bbox['lat'][1]),
+            '),Long(',
+            str(bbox['lon'][0]),
+            ':',
+            str(bbox['lon'][1]),
+            ')]',
+            ColoringHelper.normalize(
+                * ColoringHelper.get_data_bounds(indicator)
+            ),
+            ', {Lat: "CRS:1"(0:255), Long: "CRS:1"(0:255)}),  "PNG")]'
         ]
 
-        payload = ''.join(query_list)
+        envelope_list = [ '<?xml version="1.0" encoding="UTF-8" ?>',
+                          '<ProcessCoveragesRequest xmlns="http://www.opengis.net/wcps/1.0" service="WCPS" version="1.0.0">',
+                          '<query><abstractSyntax>',
+                          *query_list,
+                          '</abstractSyntax></query>',
+                          '</ProcessCoveragesRequest>'
+        ]
+
+        payload = ''.join(envelope_list)
         logging.debug(f"payload: {payload}")
         headers = {'Content-Type': 'application/xml'}
         request = Request(
@@ -215,8 +224,8 @@ class QueryService(object):
         prepped = session.prepare_request(request)
         response = session.send(prepped)
         if response.status_code == 404:
-            raise PeriodNotValid('Period Not Valid')
-        with tempfile.NamedTemporaryFile(suffix='.tiff', delete=False) as f:
+            raise PeriodNotValid('Data not found')
+        with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as f:
             for chunk in response.iter_content(chunk_size=1024):
                 f.write(chunk)
             raster_filename = f.name
