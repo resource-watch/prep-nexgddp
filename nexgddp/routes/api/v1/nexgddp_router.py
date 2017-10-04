@@ -266,7 +266,5 @@ def get_tile(x, y, z, style=None):
     bbox = TileService.get_bbox(x, y, z)
     logging.debug(f"bbox: {bbox}")
     rasterfile = QueryService.get_tile_query(bbox)
-    logging.debug(f"rasterfile: {rasterfile}")
-    logging.debug(f"style: {style}")
-    colored_file = ColoringHelper.colorize(rasterfile)
+    colored_file = ColoringHelper.colorize(rasterfile, color_ramp_name = style)
     return send_from_directory('/tmp/', colored_file.replace('/tmp/', ''), mimetype='image/png'), 200

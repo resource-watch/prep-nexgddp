@@ -22,12 +22,13 @@ class ColoringHelper(object):
 
     @staticmethod
     def colorize(input_filename, color_ramp_name = None):
+        logging.debug(f"[QueryService] Coloring raster {input_filename} with ramp {color_ramp_name}")
         with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as output_filename:
             in_matrix = cv2.imread(input_filename, cv2.IMREAD_GRAYSCALE)
             color_ramp = ColoringHelper.get_color_ramp(color_ramp_name)
-            logging.debug(f"[QueryService] Coloring raster {input_filename} with ramp {color_ramp}")
+            logging.debug(f"color_ramp: {color_ramp}")
             if color_ramp:
-                im_color = cv2.applyColorMap(in_matrix, cv2.COLORMAP_SUMMER)
+                im_color = cv2.applyColorMap(in_matrix, color_ramp)
                 cv2.imwrite(input_filename, im_color)
             return input_filename
 
