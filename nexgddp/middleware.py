@@ -43,11 +43,13 @@ def get_latlon(func):
         return func(*args, **kwargs)
     return wrapper
 
-# def get_geoaggr(func):
-#     @wraps(func)
-#     def wrapper(*args, **kwargs):
 
-#         geoaggr_funcs = request.args.get('geoagg')
-        
-#         return func(*args, **kwargs)
-#     return wrapper
+def get_style(func):
+    """Get style"""
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        style = request.args.get('style', None)
+        logging.debug(f"style: {style}")
+        kwargs["style"] = style
+        return func(*args, **kwargs)
+    return wrapper

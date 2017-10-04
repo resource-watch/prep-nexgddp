@@ -1,5 +1,4 @@
 """API ROUTER"""
-
 import logging
 from flask import jsonify, request, send_from_directory, Blueprint, Response
 from nexgddp.routes.api import error
@@ -8,7 +7,7 @@ from nexgddp.services.xml_service import XMLService
 from nexgddp.services.tile_service import TileService
 from nexgddp.helpers.coloring_helper import ColoringHelper
 from nexgddp.errors import SqlFormatError, PeriodNotValid, TableNameNotValid, GeostoreNeeded, XMLParserError, InvalidField, CoordinatesNeeded
-from nexgddp.middleware import get_bbox_by_hash, get_latlon
+from nexgddp.middleware import get_bbox_by_hash, get_latlon, get_style
 from CTRegisterMicroserviceFlask import request_to_microservice
 import datetime
 import dateutil.parser
@@ -260,12 +259,14 @@ def register_dataset():
     return jsonify(callback_to_dataset(body)), 200
 
 @nexgddp_endpoints.route('/slippy/<int:z>/<int:x>/<int:y>', methods=['GET'])
-def get_tile(x, y, z):
+@get_style
+def get_tile(x, y, z, style=None):
     """Slippy map endpoint"""
     logging.info(f'Getting tile for {x} {y} {z}')
     bbox = TileService.get_bbox(x, y, z)
     logging.debug(f"bbox: {bbox}")
     rasterfile = QueryService.get_tile_query(bbox)
     logging.debug(f"rasterfile: {rasterfile}")
+    logging.debug(f"style: {style}")
     colored_file = ColoringHelper.colorize(rasterfile)
     return send_from_directory('/tmp/', colored_file.replace('/tmp/', ''), mimetype='image/png'), 200

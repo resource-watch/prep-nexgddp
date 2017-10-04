@@ -21,39 +21,29 @@ class ColoringHelper(object):
         }.get(indicator, [0, 255])
 
     @staticmethod
-    def colorize(input_filename, color_ramp = 'spectral'):
+    def colorize(input_filename, color_ramp_name = None):
         with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as output_filename:
-            logging.debug(f"[QueryService] Coloring raster {input_filename} with ramp {color_ramp}")
             in_matrix = cv2.imread(input_filename, cv2.IMREAD_GRAYSCALE)
-            im_color = cv2.applyColorMap(in_matrix, cv2.COLORMAP_JET)
-
-            cv2.imwrite(input_filename, im_color)
-            # lookup_table = ColoringHelper.get_color_lut(color_ramp)
-            # logging.debug(f"LUT: {lookup_table}")
-
-            # out_matrix = cv2.LUT(in_matrix, lookup_table)
-
+            color_ramp = ColoringHelper.get_color_ramp(color_ramp_name)
+            logging.debug(f"[QueryService] Coloring raster {input_filename} with ramp {color_ramp}")
+            if color_ramp:
+                im_color = cv2.applyColorMap(in_matrix, cv2.COLORMAP_SUMMER)
+                cv2.imwrite(input_filename, im_color)
             return input_filename
-            
-            # We operate over a flattened view of the data - faster
-
-            
 
     @staticmethod
-    def get_color_lut(color_ramp):
-        coloring_function =  {
-                'spectral': lambda x: list(Color('red').range_to(Color('green'), 256))[x].rgb
-        }.get(color_ramp, lambda y: [y, y, y])
-
-        out_list = list(map(
-            lambda x: list(ColoringHelper.pr_to_byte(coloring_function(x))),
-            list(range(256))
-        ))
-        out_arr = np.asarray(out_list, dtype=np.dtype('uint8'))
-        return out_arr
-
-    @staticmethod
-    def pr_to_byte(vector):
-        to_byte_int = lambda v: int(v * 255)
-        to_byte_int_v = np.vectorize(to_byte_int)
-        return to_byte_int_v(vector)
+    def get_color_ramp(color_ramp_name):
+        return {
+            'autumn':  cv2.COLORMAP_AUTUMN,
+            'bone':    cv2.COLORMAP_BONE,
+            'cool':    cv2.COLORMAP_COOL,
+            'hot':     cv2.COLORMAP_HOT,
+            'hsv':     cv2.COLORMAP_HSV,
+            'jet':     cv2.COLORMAP_JET,
+            'ocean':   cv2.COLORMAP_OCEAN,
+            'pink':    cv2.COLORMAP_PINK,
+            'rainbow': cv2.COLORMAP_RAINBOW,
+            'spring':  cv2.COLORMAP_SPRING,
+            'summer':  cv2.COLORMAP_SUMMER,
+            'winter':  cv2.COLORMAP_WINTER
+        }.get(color_ramp_name, None)
