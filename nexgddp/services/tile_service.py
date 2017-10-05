@@ -1,6 +1,6 @@
 import logging
 import mercantile
-from pyproj import Proj, transform
+# from pyproj import Proj, transform
 
 class TileService(object):
     @staticmethod

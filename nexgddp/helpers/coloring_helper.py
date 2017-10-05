@@ -3,11 +3,12 @@
 import logging
 import tempfile
 import os
+import io
 #import lycon
 import cv2
 import numpy as np
 from colour import Color
-
+from flask import send_file
 
 class ColoringHelper(object):
     @staticmethod
@@ -23,15 +24,19 @@ class ColoringHelper(object):
     @staticmethod
     def colorize(input_filename, color_ramp_name = None):
         logging.debug(f"[QueryService] Coloring raster {input_filename} with ramp {color_ramp_name}")
-        with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as output_filename:
-            in_matrix = cv2.imread(input_filename, cv2.IMREAD_GRAYSCALE)
-            color_ramp = ColoringHelper.get_color_ramp(color_ramp_name)
-            logging.debug(f"color_ramp: {color_ramp}")
-            if color_ramp:
-                im_color = cv2.applyColorMap(in_matrix, color_ramp)
-                cv2.imwrite(input_filename, im_color)
-            return input_filename
-
+        in_matrix = cv2.imread(input_filename, cv2.IMREAD_GRAYSCALE)
+        color_ramp = ColoringHelper.get_color_ramp(color_ramp_name)
+        logging.debug(f"color_ramp: {color_ramp}")
+        if color_ramp:
+            im_color = cv2.applyColorMap(in_matrix, color_ramp)
+            cv2.imwrite(input_filename, im_color)
+        f = open(input_filename, 'rb')
+        return send_file(
+            io.BytesIO(f.read()),
+            attachment_filename='tile.png',
+            mimetype='image/png'
+        )
+    
     @staticmethod
     def get_color_ramp(color_ramp_name):
         return {

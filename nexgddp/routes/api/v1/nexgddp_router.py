@@ -1,5 +1,6 @@
 """API ROUTER"""
 import logging
+import os
 from flask import jsonify, request, send_from_directory, Blueprint, Response
 from nexgddp.routes.api import error
 from nexgddp.services.query_service import QueryService
@@ -267,4 +268,7 @@ def get_tile(x, y, z, style=None):
     logging.debug(f"bbox: {bbox}")
     rasterfile = QueryService.get_tile_query(bbox)
     colored_file = ColoringHelper.colorize(rasterfile, color_ramp_name = style)
-    return send_from_directory('/tmp/', colored_file.replace('/tmp/', ''), mimetype='image/png'), 200
+
+    os.remove(rasterfile)
+    
+    return colored_file, 200
