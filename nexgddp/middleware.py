@@ -7,6 +7,7 @@ from nexgddp.routes.api import error
 from nexgddp.services.geostore_service import GeostoreService
 from nexgddp.services.redis_service import RedisService
 from nexgddp.services.layer_service import LayerService
+from nexgddp.services.dataset_service import DatasetService
 from nexgddp.errors import GeostoreNotFound, InvalidCoordinates, LayerNotFound
 
 import logging
@@ -46,13 +47,38 @@ def get_latlon(func):
     return wrapper
 
 
-def get_style(func):
+def get_tile_attrs(func):
     """Get style"""
     @wraps(func)
     def wrapper(*args, **kwargs):
-        style = request.args.get('style', None)
-        logging.debug(f"style: {style}")
-        kwargs["style"] = style
+        layer_object = kwargs.get('layer_object', None)
+        layer_config = layer_object.get('layerConfig', None)
+        dataset = layer_object.get('dataset', None)
+        logging.debug(f'dataset: {dataset}')
+        
+        logging.debug('Obtaining style')
+        layer_style = layer_config.get('color_ramp')
+        logging.debug(f'style: {layer_style}')
+        kwargs["style"] = layer_style
+        
+        logging.debug('Obtaining year')
+        year = layer_config.get('year')
+        logging.debug(f'year: {year}')
+        kwargs["year"] = year
+
+        logging.debug('Obtaining indicator')
+        indicator = layer_config.get('indicator')
+        logging.debug(f'indicator: {indicator}')
+        kwargs["indicator"] = indicator
+
+        
+        logging.debug('Obtaining scenario and model')
+        dataset_object = DatasetService.get(dataset)
+        tablename = dataset_object.get('tableName', None)
+        logging.debug(f'tablename: {tablename}')
+        kwargs['model'] = tablename.split('/')[1]
+        kwargs['scenario'] = tablename.split('/')[0]
+        del kwargs['layer_object']
         return func(*args, **kwargs)
     return wrapper
 

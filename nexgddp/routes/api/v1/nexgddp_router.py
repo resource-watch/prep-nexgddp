@@ -8,7 +8,7 @@ from nexgddp.services.xml_service import XMLService
 from nexgddp.services.tile_service import TileService
 from nexgddp.helpers.coloring_helper import ColoringHelper
 from nexgddp.errors import SqlFormatError, PeriodNotValid, TableNameNotValid, GeostoreNeeded, XMLParserError, InvalidField, CoordinatesNeeded, LayerNotFound
-from nexgddp.middleware import get_bbox_by_hash, get_latlon, get_style, get_layer
+from nexgddp.middleware import get_bbox_by_hash, get_latlon, get_tile_attrs, get_layer
 from CTRegisterMicroserviceFlask import request_to_microservice
 import datetime
 import dateutil.parser
@@ -263,14 +263,13 @@ def register_dataset():
 
 @nexgddp_endpoints.route('/layer/<layer>/slippy/<int:x>/<int:y>/<int:z>', methods=['GET'])
 @get_layer
-@get_style
-def get_tile(x, y, z, layer, layer_object, style=None):
+@get_tile_attrs
+def get_tile(x, y, z, model, scenario, year, style, indicator, layer):
     """Slippy map endpoint"""
     logging.info(f'Getting tile for {x} {y} {z}')
-    logging.debug(f'layer: #{layer}')
     bbox = TileService.get_bbox(z, x, y)
     logging.debug(f"bbox: {bbox}")
-    rasterfile = QueryService.get_tile_query(bbox)
+    rasterfile = QueryService.get_tile_query(bbox, year, model, scenario, indicator)
     colored_response = ColoringHelper.colorize(rasterfile, color_ramp_name = style)
     os.remove(rasterfile)
     return colored_response, 200

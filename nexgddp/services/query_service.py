@@ -179,8 +179,10 @@ class QueryService(object):
             return raster_filename
 
     @staticmethod
-    def get_tile_query(bbox, coverage = 'historical_ACCESS1_0_processed', indicator = 'tmax5day', year = '1953'):
+    def get_tile_query(bbox, year, model, scenario, indicator):
         logging.info('[QueryService] Forming rasdaman query')
+        coverage = f'{scenario}_{model}_processed'
+        logging.debug(f'coverage: {coverage}')
         query_list = [
             'for cov in (',
             coverage,
