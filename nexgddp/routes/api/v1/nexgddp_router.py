@@ -7,8 +7,8 @@ from nexgddp.services.query_service import QueryService
 from nexgddp.services.xml_service import XMLService
 from nexgddp.services.tile_service import TileService
 from nexgddp.helpers.coloring_helper import ColoringHelper
-from nexgddp.errors import SqlFormatError, PeriodNotValid, TableNameNotValid, GeostoreNeeded, XMLParserError, InvalidField, CoordinatesNeeded
-from nexgddp.middleware import get_bbox_by_hash, get_latlon, get_style
+from nexgddp.errors import SqlFormatError, PeriodNotValid, TableNameNotValid, GeostoreNeeded, XMLParserError, InvalidField, CoordinatesNeeded, LayerNotFound
+from nexgddp.middleware import get_bbox_by_hash, get_latlon, get_style, get_layer
 from CTRegisterMicroserviceFlask import request_to_microservice
 import datetime
 import dateutil.parser
@@ -259,16 +259,18 @@ def register_dataset():
 
     return jsonify(callback_to_dataset(body)), 200
 
-@nexgddp_endpoints.route('/slippy/<int:z>/<int:x>/<int:y>', methods=['GET'])
+
+
+@nexgddp_endpoints.route('/layer/<layer>/slippy/<int:x>/<int:y>/<int:z>', methods=['GET'])
+@get_layer
 @get_style
-def get_tile(x, y, z, style=None):
+def get_tile(x, y, z, layer, layer_object, style=None):
     """Slippy map endpoint"""
     logging.info(f'Getting tile for {x} {y} {z}')
-    bbox = TileService.get_bbox(x, y, z)
+    logging.debug(f'layer: #{layer}')
+    bbox = TileService.get_bbox(z, x, y)
     logging.debug(f"bbox: {bbox}")
     rasterfile = QueryService.get_tile_query(bbox)
-    colored_file = ColoringHelper.colorize(rasterfile, color_ramp_name = style)
-
+    colored_response = ColoringHelper.colorize(rasterfile, color_ramp_name = style)
     os.remove(rasterfile)
-    
-    return colored_file, 200
+    return colored_response, 200
