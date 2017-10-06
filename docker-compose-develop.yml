@@ -19,8 +19,8 @@ develop:
   volumes:
     - ./nexgddp:/opt/nexgddp/nexgddp
   restart: always
-links:
-  - redis
+  links:
+    - redis
 redis:
   image: redis
   restart: always
