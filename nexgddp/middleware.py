@@ -5,7 +5,7 @@ from flask import request
 
 from nexgddp.routes.api import error
 from nexgddp.services.geostore_service import GeostoreService
-from nexgddp.services.redis_service import RedisService
+# from nexgddp.services.redis_service import RedisService
 from nexgddp.services.layer_service import LayerService
 from nexgddp.services.dataset_service import DatasetService
 from nexgddp.errors import GeostoreNotFound, InvalidCoordinates, LayerNotFound
@@ -82,16 +82,16 @@ def get_tile_attrs(func):
         return func(*args, **kwargs)
     return wrapper
 
-def exist_tile(func):
-    """Gets tile from cache"""
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        url = RedisService.get(request.path)
-        if url is None:
-            return func(*args, **kwargs)
-        else:
-            return redirect(url)
-    return wrapper
+# def exist_tile(func):
+#     """Gets tile from cache"""
+#     @wraps(func)
+#     def wrapper(*args, **kwargs):
+#         url = RedisService.get(request.path)
+#         if url is None:
+#             return func(*args, **kwargs)
+#         else:
+#             return redirect(url)
+#     return wrapper
 
 def get_layer(func):
     """Get geodata"""
