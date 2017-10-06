@@ -14,6 +14,7 @@ develop:
     LOCAL_URL: http://mymachine:3078
     API_VERSION: v1
     RASDAMAN_URL: http://54.146.170.2:8080/rasdaman/ows
+    REDIS_URL: redis://redis:6379
   command: develop
   volumes:
     - ./nexgddp:/opt/nexgddp/nexgddp
