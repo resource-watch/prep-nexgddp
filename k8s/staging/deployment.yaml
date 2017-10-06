@@ -55,6 +55,8 @@ spec:
                 secretKeyRef:
                   name: dbsecrets
                   key: RASDAMAN_URL
+          - name: REDIS_URL
+            value: 'redis:6379'
 
         ports:
           - containerPort: 3078
