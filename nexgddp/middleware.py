@@ -5,7 +5,7 @@ from flask import request
 
 from nexgddp.routes.api import error
 from nexgddp.services.geostore_service import GeostoreService
-# from nexgddp.services.redis_service import RedisService
+from nexgddp.services.redis_service import RedisService
 from nexgddp.services.layer_service import LayerService
 from nexgddp.services.dataset_service import DatasetService
 from nexgddp.errors import GeostoreNotFound, InvalidCoordinates, LayerNotFound
@@ -104,4 +104,19 @@ def get_layer(func):
         logging.debug(f'layer_object: {layer_object}')
         kwargs["layer_object"] = layer_object
         return func(*args, **kwargs)
+    return wrapper
+
+def tile_exists(func):
+    """Checks if the tile exists in the cache"""
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        logging.info("[Middleware] Checking if tile exists in cache")
+        logging.debug(f'request.path: {request.path}')
+        url = RedisService.get(request.path)
+        logging.debug(f'url: {url}')
+        if url is None:
+            logging.debug("No tile found in cache")
+            return func(*args, **kwargs)
+        else:
+            return redirect(url)
     return wrapper

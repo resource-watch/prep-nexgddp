@@ -6,9 +6,10 @@ from nexgddp.routes.api import error
 from nexgddp.services.query_service import QueryService
 from nexgddp.services.xml_service import XMLService
 from nexgddp.services.tile_service import TileService
+from nexgddp.services.redis_service import RedisService
 from nexgddp.helpers.coloring_helper import ColoringHelper
 from nexgddp.errors import SqlFormatError, PeriodNotValid, TableNameNotValid, GeostoreNeeded, XMLParserError, InvalidField, CoordinatesNeeded, LayerNotFound
-from nexgddp.middleware import get_bbox_by_hash, get_latlon, get_tile_attrs, get_layer
+from nexgddp.middleware import get_bbox_by_hash, get_latlon, get_tile_attrs, get_layer, tile_exists
 from CTRegisterMicroserviceFlask import request_to_microservice
 import datetime
 import dateutil.parser
@@ -260,8 +261,8 @@ def register_dataset():
     return jsonify(callback_to_dataset(body)), 200
 
 
-
-@nexgddp_endpoints.route('/layer/<layer>/slippy/<int:x>/<int:y>/<int:z>', methods=['GET'])
+@nexgddp_endpoints.route('/layer/<layer>/tile/nexgddp/<int:z>/<int:x>/<int:y>', methods=['GET'])
+@tile_exists
 @get_layer
 @get_tile_attrs
 def get_tile(x, y, z, model, scenario, year, style, indicator, layer):

@@ -94,7 +94,7 @@
 	    "method": "GET",
 	    "redirect": {
 		"method": "GET",
-		"path": "/api/v1/nexgddp/layer/:layer/slippy/:x/:y/:z"
+		"path": "/api/v1/nexgddp/layer/:layer/tile/nexgddp/:z/:x/:y"
 	    }
         }
     ]
