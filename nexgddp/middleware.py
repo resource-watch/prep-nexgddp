@@ -1,7 +1,7 @@
 """MIDDLEWARE"""
 
 from functools import wraps
-from flask import request
+from flask import request, redirect
 
 from nexgddp.routes.api import error
 from nexgddp.services.geostore_service import GeostoreService
@@ -118,5 +118,6 @@ def tile_exists(func):
             logging.debug("No tile found in cache")
             return func(*args, **kwargs)
         else:
+            logging.debug("Tile found, redirecting")
             return redirect(url)
     return wrapper
