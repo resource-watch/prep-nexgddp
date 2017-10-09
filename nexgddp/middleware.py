@@ -121,3 +121,16 @@ def tile_exists(func):
             logging.debug("Tile found, redirecting")
             return redirect(url)
     return wrapper
+
+def is_microservice(func):
+    """Get geodata"""
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        logging.debug("Checking microservice user")        
+        logged_user = json.loads(request.args.get("loggedUser", None))
+        if logged_user.get("id") == "microservice":
+            logging.debug("is microservice");
+            return func(*args, **kwargs)
+        else:
+            return error(status=403, detail="Not authorized")
+    return wrapper

@@ -96,6 +96,15 @@
 		"method": "GET",
 		"path": "/api/v1/nexgddp/layer/:layer/tile/nexgddp/:x/:y/:z"
 	    }
-        }
+        },
+	{
+		"path": "/v1/layer/:layer/expire-cache",
+		"method": "DELETE",
+		"authenticated": true,
+		"redirect": {
+			"method": "DELETE",
+			"path": "/api/v1/layer/:layer/expire-cache"
+		}
+	}
     ]
 }

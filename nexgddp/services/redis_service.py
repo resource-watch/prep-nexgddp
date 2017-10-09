@@ -19,3 +19,8 @@ class RedisService(object):
     @staticmethod
     def set(key, value):
         return r.set(key, value)
+
+    @staticmethod
+    def expire_layer(layer):
+        for key in r.scan_iter("*"+layer+"*"):
+            r.delete(key)
