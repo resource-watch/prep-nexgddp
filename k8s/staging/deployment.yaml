@@ -65,6 +65,8 @@ spec:
                 secretKeyRef:
                   name: dbsecrets
                   key: GEE_TILES_REDIS_URI
+          - name: GOOGLE_APPLICATION_CREDENTIALS
+            value: /opt/nexgddp/storage.json
         ports:
           - containerPort: 3078
 
