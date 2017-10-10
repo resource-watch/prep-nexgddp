@@ -12,6 +12,7 @@ case "$1" in
         ;;
     start)
         echo "Running Start"
+	echo -e "$GCLOUD_STORAGE" | base64 -d > storage.json
         exec gunicorn -c gunicorn.py nexgddp:app
         ;;
     *)
