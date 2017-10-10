@@ -289,6 +289,5 @@ def get_tile(x, y, z, model, scenario, year, style, indicator, layer):
 @is_microservice
 def expire_cache(layer):
     logging.info('[NEXGDDP-ROUTER] Expiring the tile cache')
-
     RedisService.expire_layer(layer)
     StorageService.delete_folder(layer)
