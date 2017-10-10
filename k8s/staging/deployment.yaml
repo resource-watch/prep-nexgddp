@@ -55,6 +55,16 @@ spec:
                 secretKeyRef:
                   name: dbsecrets
                   key: RASDAMAN_URL
+          - name: GCLOUD_STORAGE
+            valueFrom:
+                secretKeyRef:
+                  name: mssecrets
+                  key: GCLOUD_BACKUPS_CREDENTIALS
+          - name: REDIS_URL
+            valueFrom:
+                secretKeyRef:
+                  name: dbsecrets
+                  key: GEE_TILES_REDIS_URI
         ports:
           - containerPort: 3078
 

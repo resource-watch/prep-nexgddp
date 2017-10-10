@@ -4,6 +4,7 @@ set -e
 case "$1" in
     develop)
         echo "Running Development Server"
+	echo -e "$GCLOUD_STORAGE" | base64 -d > storage.json
         exec python main.py
         ;;
     test)

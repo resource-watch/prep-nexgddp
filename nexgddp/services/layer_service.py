@@ -1,8 +1,5 @@
 """ Layer service """
-
-import redis
 import json
-
 
 from nexgddp.errors import LayerNotFound
 from CTRegisterMicroserviceFlask import request_to_microservice
