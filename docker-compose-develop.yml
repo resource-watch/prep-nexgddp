@@ -14,7 +14,18 @@ develop:
     LOCAL_URL: http://mymachine:3078
     API_VERSION: v1
     RASDAMAN_URL: http://54.146.170.2:8080/rasdaman/ows
+    REDIS_URL: redis://redis:6379
+    GCLOUD_STORAGE: ${GCLOUD_STORAGE}
+    GOOGLE_APPLICATION_CREDENTIALS: /opt/nexgddp/storage.json
   command: develop
   volumes:
     - ./nexgddp:/opt/nexgddp/nexgddp
   restart: always
+  links:
+    - redis
+  extra_hosts:
+    - "mymachine:192.168.1.42"
+redis:
+  image: redis
+  restart: always
+

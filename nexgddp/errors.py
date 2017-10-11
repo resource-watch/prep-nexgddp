@@ -45,3 +45,9 @@ class InvalidCoordinates(Error):
 
 class CoordinatesNeeded(Error):
     pass
+
+class LayerNotFound(Error):
+    pass
+
+class DatasetNotFound(Error):
+    pass
