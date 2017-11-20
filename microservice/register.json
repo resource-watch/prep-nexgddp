@@ -107,17 +107,16 @@
 		},
         "filters": [
             {
-                "name": "dataset",
-                "path": "/v1/dataset/:dataset",
+                "name": "layer",
+                "path": "/v1/layer/:layer",
                 "method": "GET",
                 "params": {
-                    "dataset": "dataset"
+                    "layer": "layer"
                 },
                 "compare": {
                     "data": {
                         "attributes": {
-                            "provider": "nexgddp",
-                            "status": "saved"
+                            "provider": "nexgddp"
                         }
                     }
                 }
