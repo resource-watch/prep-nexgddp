@@ -104,7 +104,25 @@
 		"redirect": {
 			"method": "DELETE",
 			"path": "/api/v1/layer/:layer/expire-cache"
-		}
+		},
+        "filters": [
+            {
+                "name": "dataset",
+                "path": "/v1/dataset/:dataset",
+                "method": "GET",
+                "params": {
+                    "dataset": "dataset"
+                },
+                "compare": {
+                    "data": {
+                        "attributes": {
+                            "provider": "nexgddp",
+                            "status": "saved"
+                        }
+                    }
+                }
+            }
+        ]
 	}
     ]
 }
