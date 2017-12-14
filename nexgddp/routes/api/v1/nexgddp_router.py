@@ -10,7 +10,7 @@ from nexgddp.services.storage_service import StorageService
 from nexgddp.services.redis_service import RedisService
 from nexgddp.helpers.coloring_helper import ColoringHelper
 from nexgddp.errors import SqlFormatError, PeriodNotValid, TableNameNotValid, GeostoreNeeded, XMLParserError, InvalidField, CoordinatesNeeded, LayerNotFound
-from nexgddp.middleware import get_bbox_by_hash, get_latlon, get_tile_attrs, get_layer, tile_exists, is_microservice
+from nexgddp.middleware import get_bbox_by_hash, get_latlon, get_tile_attrs, get_layer, get_year, tile_exists, is_microservice
 from CTRegisterMicroserviceFlask import request_to_microservice
 import datetime
 import dateutil.parser
@@ -278,7 +278,8 @@ def register_dataset():
 
 
 @nexgddp_endpoints.route('/layer/<layer>/tile/nexgddp/<int:z>/<int:x>/<int:y>', methods=['GET'])
-@tile_exists
+#@tile_exists
+@get_year
 @get_layer
 @get_tile_attrs
 def get_tile(x, y, z, model, scenario, year, style, indicator, layer):
