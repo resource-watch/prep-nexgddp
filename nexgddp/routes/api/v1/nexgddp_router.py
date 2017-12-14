@@ -171,13 +171,17 @@ def query(dataset_id, bbox):
         return error(status=400, detail='No coordinates provided. Include geostore or lat & lon')
     # Get years
     years = get_years(json_sql)
+    logging.debug("years: ")
+    logging.debug(years)
     if len(years) == 0:
         domain = QueryService.get_domain(scenario, model)
         logging.debug(f"domain: {domain}")
         years = list(range(
             int(dateutil.parser.parse(domain['year']['min'], fuzzy_with_tokens=True)[0].year),
-            int(dateutil.parser.parse(domain['year']['max'], fuzzy_with_tokens=True)[0].year + 1)
+            int(dateutil.parser.parse(domain['year']['max'], fuzzy_with_tokens=True)[0].year + 1),
+            10
         ))
+        logging.debug(f"years: {years}")
         # return error(status=400, detail='Period of time must be set')
 
     results = {}
