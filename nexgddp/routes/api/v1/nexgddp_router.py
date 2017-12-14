@@ -282,13 +282,13 @@ def register_dataset():
 @get_year
 @get_layer
 @get_tile_attrs
-def get_tile(x, y, z, model, scenario, year, style, indicator, layer):
+def get_tile(x, y, z, model, scenario, year, style, invert, indicator, layer):
     """Slippy map endpoint"""
     logging.info(f'Getting tile for {x} {y} {z}')
     bbox = TileService.get_bbox(z, x, y)
     logging.debug(f"bbox: {bbox}")
     rasterfile = QueryService.get_tile_query(bbox, year, model, scenario, indicator)
-    colored_response = ColoringHelper.colorize(rasterfile, color_ramp_name = style)
+    colored_response = ColoringHelper.colorize(rasterfile, color_ramp_name = style, invert = invert)
 
     # Saving file in cache
     logging.debug(f'Requested path is: {request.path}')

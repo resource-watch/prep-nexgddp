@@ -71,8 +71,11 @@ def get_tile_attrs(func):
         
         logging.debug('Obtaining style')
         layer_style = layer_config.get('color_ramp')
-        logging.debug(f'style: {layer_style}')
+        logging.debug('Inverse?')
+        color_invert = layer_config.get('invert')
+        logging.debug(f'color_invert: {color_invert}')
         kwargs["style"] = layer_style
+        kwargs["invert"] = color_invert
         
         logging.debug('Obtaining year')
         # year = layer_config.get('year')
