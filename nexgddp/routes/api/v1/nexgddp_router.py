@@ -76,7 +76,7 @@ def parse_year(value):
             raise PeriodNotValid("Supplied dates are invalid")
             
 
-def get_years(json_sql):
+def get_years(json_sql, temporal_resolution):
     where_sql = json_sql.get('where', None)
     logging.debug(f"where_sql: {where_sql}")
     if where_sql is None:
@@ -120,10 +120,12 @@ def get_years(json_sql):
 def query(dataset_id, bbox):
     """NEXGDDP QUERY ENDPOINT"""
     logging.info('[ROUTER] Doing Query of dataset '+dataset_id)
-
+    
     # Get and deserialize
     dataset = request.get_json().get('dataset', None).get('data', None)
     table_name = dataset.get('attributes').get('tableName')
+    temporal_resolution = table_name.split('_')[-1]
+    logging.debug(f"temporal_resolution: {temporal_resolution}")
     scenario, model = table_name.rsplit('/')
     sql = request.args.get('sql', None) or request.get_json().get('sql', None)
     if not sql:
@@ -163,6 +165,7 @@ def query(dataset_id, bbox):
     if select_year == True:
         result = {}
         domain = QueryService.get_domain(scenario, model)
+        logging.debug(f"domain: {domain}")
         for element in select:
             result[element['alias'] if element['alias'] else f"{element['function']}({element['argument']})"] = domain.get(element['argument']).get(element['function'])
         return jsonify(data=[result]), 200
@@ -170,7 +173,7 @@ def query(dataset_id, bbox):
     if not bbox:
         return error(status=400, detail='No coordinates provided. Include geostore or lat & lon')
     # Get years
-    years = get_years(json_sql)
+    years = get_years(json_sql, temporal_resolution)
     logging.debug("years: ")
     logging.debug(years)
     if len(years) == 0:
@@ -179,8 +182,8 @@ def query(dataset_id, bbox):
         years = list(range(
             int(dateutil.parser.parse(domain['year']['min'], fuzzy_with_tokens=True)[0].year),
             int(dateutil.parser.parse(domain['year']['max'], fuzzy_with_tokens=True)[0].year + 1),
-            10
-        ))
+            10 
+        )) if temporal_resolution == 'decadal' else ['1971', '2021', '2051']
         logging.debug(f"years: {years}")
         # return error(status=400, detail='Period of time must be set')
 
