@@ -77,6 +77,7 @@ def parse_year(value):
             
 
 def get_years(json_sql, temporal_resolution):
+    stride = 10 if temporal_resolution == 'decadal' else 1
     where_sql = json_sql.get('where', None)
     logging.debug(f"where_sql: {where_sql}")
     if where_sql is None:
@@ -90,8 +91,12 @@ def get_years(json_sql, temporal_resolution):
             )
         )
         logging.debug(years)
-        years = list(range(parse_year(years[0]), parse_year(years[1])+1))
+        years = list(range(parse_year(years[0]), parse_year(years[1])+1, stride))
         logging.debug(years)
+        years = [year for year in years if year in [1971, 2021, 2051]] if temporal_resolution == '30y' else years
+        # Hacky, to solve later - need to find a better way to deal with irregular time series
+        if years[0] < 1971:
+            raise PeriodNotValid("Supplied dates are invalid")
         return years
     elif where_sql.get('type', None) == 'conditional' or where_sql.get('type', None) == 'operator':
         def get_years_node(node):
@@ -173,7 +178,10 @@ def query(dataset_id, bbox):
     if not bbox:
         return error(status=400, detail='No coordinates provided. Include geostore or lat & lon')
     # Get years
-    years = get_years(json_sql, temporal_resolution)
+    try:
+        years = get_years(json_sql, temporal_resolution)
+    except PeriodNotValid as e:
+        return error(status=400, detail=e.message)
     logging.debug("years: ")
     logging.debug(years)
     if len(years) == 0:
@@ -211,7 +219,7 @@ def query(dataset_id, bbox):
         except GeostoreNeeded as e:
             return error(status=400, detail=e.message)
         except CoordinatesNeeded as e:
-            return error(status=400, detail=e.message) 
+            return error(status=400, detail=e.message)
     output = [dict(zip(results, col)) for col in zip(*results.values())]
     # return jsonify(data=response), 200
     return jsonify(data=output), 200
