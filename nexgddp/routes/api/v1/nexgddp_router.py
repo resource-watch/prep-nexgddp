@@ -278,7 +278,7 @@ def register_dataset():
 
 
 @nexgddp_endpoints.route('/layer/<layer>/tile/nexgddp/<int:z>/<int:x>/<int:y>', methods=['GET'])
-#@tile_exists
+@tile_exists
 @get_year
 @get_layer
 @get_tile_attrs
