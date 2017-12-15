@@ -10,7 +10,7 @@ from nexgddp.services.storage_service import StorageService
 from nexgddp.services.redis_service import RedisService
 from nexgddp.helpers.coloring_helper import ColoringHelper
 from nexgddp.errors import SqlFormatError, PeriodNotValid, TableNameNotValid, GeostoreNeeded, XMLParserError, InvalidField, CoordinatesNeeded, LayerNotFound
-from nexgddp.middleware import get_bbox_by_hash, get_latlon, get_tile_attrs, get_layer, tile_exists, is_microservice
+from nexgddp.middleware import get_bbox_by_hash, get_latlon, get_tile_attrs, get_layer, get_year, tile_exists, is_microservice
 from CTRegisterMicroserviceFlask import request_to_microservice
 import datetime
 import dateutil.parser
@@ -76,7 +76,8 @@ def parse_year(value):
             raise PeriodNotValid("Supplied dates are invalid")
             
 
-def get_years(json_sql):
+def get_years(json_sql, temporal_resolution):
+    stride = 10 if temporal_resolution == 'decadal' else 1
     where_sql = json_sql.get('where', None)
     logging.debug(f"where_sql: {where_sql}")
     if where_sql is None:
@@ -90,8 +91,12 @@ def get_years(json_sql):
             )
         )
         logging.debug(years)
-        years = list(range(parse_year(years[0]), parse_year(years[1])+1))
+        years = list(range(parse_year(years[0]), parse_year(years[1])+1, stride))
         logging.debug(years)
+        years = [year for year in years if year in [1971, 2021, 2051]] if temporal_resolution == '30y' else years
+        # Hacky, to solve later - need to find a better way to deal with irregular time series
+        if years[0] < 1971:
+            raise PeriodNotValid("Supplied dates are invalid")
         return years
     elif where_sql.get('type', None) == 'conditional' or where_sql.get('type', None) == 'operator':
         def get_years_node(node):
@@ -120,10 +125,12 @@ def get_years(json_sql):
 def query(dataset_id, bbox):
     """NEXGDDP QUERY ENDPOINT"""
     logging.info('[ROUTER] Doing Query of dataset '+dataset_id)
-
+    
     # Get and deserialize
     dataset = request.get_json().get('dataset', None).get('data', None)
     table_name = dataset.get('attributes').get('tableName')
+    temporal_resolution = table_name.split('_')[-1]
+    logging.debug(f"temporal_resolution: {temporal_resolution}")
     scenario, model = table_name.rsplit('/')
     sql = request.args.get('sql', None) or request.get_json().get('sql', None)
     if not sql:
@@ -163,6 +170,7 @@ def query(dataset_id, bbox):
     if select_year == True:
         result = {}
         domain = QueryService.get_domain(scenario, model)
+        logging.debug(f"domain: {domain}")
         for element in select:
             result[element['alias'] if element['alias'] else f"{element['function']}({element['argument']})"] = domain.get(element['argument']).get(element['function'])
         return jsonify(data=[result]), 200
@@ -170,7 +178,10 @@ def query(dataset_id, bbox):
     if not bbox:
         return error(status=400, detail='No coordinates provided. Include geostore or lat & lon')
     # Get years
-    years = get_years(json_sql)
+    try:
+        years = get_years(json_sql, temporal_resolution)
+    except PeriodNotValid as e:
+        return error(status=400, detail=e.message)
     logging.debug("years: ")
     logging.debug(years)
     if len(years) == 0:
@@ -179,8 +190,8 @@ def query(dataset_id, bbox):
         years = list(range(
             int(dateutil.parser.parse(domain['year']['min'], fuzzy_with_tokens=True)[0].year),
             int(dateutil.parser.parse(domain['year']['max'], fuzzy_with_tokens=True)[0].year + 1),
-            10
-        ))
+            10 
+        )) if temporal_resolution == 'decadal' else ['1971', '2021', '2051']
         logging.debug(f"years: {years}")
         # return error(status=400, detail='Period of time must be set')
 
@@ -208,7 +219,7 @@ def query(dataset_id, bbox):
         except GeostoreNeeded as e:
             return error(status=400, detail=e.message)
         except CoordinatesNeeded as e:
-            return error(status=400, detail=e.message) 
+            return error(status=400, detail=e.message)
     output = [dict(zip(results, col)) for col in zip(*results.values())]
     # return jsonify(data=response), 200
     return jsonify(data=output), 200
@@ -267,16 +278,17 @@ def register_dataset():
 
 
 @nexgddp_endpoints.route('/layer/<layer>/tile/nexgddp/<int:z>/<int:x>/<int:y>', methods=['GET'])
-@tile_exists
+#@tile_exists
+@get_year
 @get_layer
 @get_tile_attrs
-def get_tile(x, y, z, model, scenario, year, style, indicator, layer):
+def get_tile(x, y, z, model, scenario, year, style, invert, indicator, layer):
     """Slippy map endpoint"""
     logging.info(f'Getting tile for {x} {y} {z}')
     bbox = TileService.get_bbox(z, x, y)
     logging.debug(f"bbox: {bbox}")
     rasterfile = QueryService.get_tile_query(bbox, year, model, scenario, indicator)
-    colored_response = ColoringHelper.colorize(rasterfile, color_ramp_name = style)
+    colored_response = ColoringHelper.colorize(rasterfile, color_ramp_name = style, invert = invert)
 
     # Saving file in cache
     logging.debug(f'Requested path is: {request.path}')

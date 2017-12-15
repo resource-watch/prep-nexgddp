@@ -47,6 +47,19 @@ def get_latlon(func):
     return wrapper
 
 
+def get_year(func):
+    """Get geodata"""
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        year = request.args.get('year', None)
+        kwargs["year"] = year
+        logging.debug(f"year: {year}")
+        if not year:
+            kwargs["year"] = None
+            return func(*args, **kwargs)
+        return func(*args, **kwargs)
+    return wrapper
+
 def get_tile_attrs(func):
     """Get style"""
     @wraps(func)
@@ -58,13 +71,16 @@ def get_tile_attrs(func):
         
         logging.debug('Obtaining style')
         layer_style = layer_config.get('color_ramp')
-        logging.debug(f'style: {layer_style}')
+        logging.debug('Inverse?')
+        color_invert = layer_config.get('invert')
+        logging.debug(f'color_invert: {color_invert}')
         kwargs["style"] = layer_style
+        kwargs["invert"] = color_invert
         
         logging.debug('Obtaining year')
-        year = layer_config.get('year')
-        logging.debug(f'year: {year}')
-        kwargs["year"] = year
+        # year = layer_config.get('year')
+        # logging.debug(f'year: {year}')
+        # kwargs["year"] = year
 
         logging.debug('Obtaining indicator')
         indicator = layer_config.get('indicator')

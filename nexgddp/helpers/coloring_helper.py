@@ -18,16 +18,18 @@ class ColoringHelper(object):
     @staticmethod
     def get_data_bounds(indicator):
         return {
-            'tmax5day': [264.848, 327.099]
+            'tasavg': [264.848, 327.099]            
         }.get(indicator, [0, 255])
 
     @staticmethod
-    def colorize(input_filename, color_ramp_name = None):
+    def colorize(input_filename, color_ramp_name = None, invert = False):
         logging.debug(f"[QueryService] Coloring raster {input_filename} with ramp {color_ramp_name}")
         in_matrix = cv2.imread(input_filename, cv2.IMREAD_GRAYSCALE)
+        if invert:
+            in_matrix = 255 - in_matrix
         color_ramp = ColoringHelper.get_color_ramp(color_ramp_name)
         logging.debug(f"color_ramp: {color_ramp}")
-        if color_ramp:
+        if color_ramp or color_ramp == 0:
             im_color = cv2.applyColorMap(in_matrix, color_ramp)
             cv2.imwrite(input_filename, im_color)
         f = open(input_filename, 'rb')
