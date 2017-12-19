@@ -124,7 +124,9 @@ def tile_exists(func):
     def wrapper(*args, **kwargs):
         logging.info("[Middleware] Checking if tile exists in cache")
         logging.debug(f'request.path: {request.path}')
-        url = RedisService.get(request.path)
+        request_id = request.path + '_' + str(kwargs['year'])
+        logging.debug(request_id)
+        url = RedisService.get(request_id)
         logging.debug(f'url: {url}')
         if url is None:
             logging.debug("No tile found in cache")
