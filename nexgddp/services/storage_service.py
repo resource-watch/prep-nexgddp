@@ -9,16 +9,16 @@ client = storage.Client()
 
 class StorageService(object):
     @staticmethod
-    def upload_file(filename, layer, z, x, y):
+    def upload_file(filename, layer, z, x, y, year):
         
         logging.debug(f'filename is: {filename}')
 
         bucket = client.get_bucket('gee-tiles')
-        blob = bucket.blob(layer + '/' + z + '/' + x + '/' + y + '/' + 'tile.png')
-        with open(filename, 'rb') as my_file:
-            blob.upload_from_file(my_file)
+        blob = bucket.blob(layer + '/' + z + '/' + x + '/' + y + '/' + str(year) + '.png')
+        with open(filename, 'rb') as tile_file:
+            blob.upload_from_file(tile_file)
             blob.make_public()
-            RedisService.set(request.path, blob.public_url)
+            RedisService.set(request.path + '_' + str(year), blob.public_url)
             os.remove(filename)
             return blob.public_url
 

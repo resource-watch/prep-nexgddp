@@ -179,7 +179,7 @@ class QueryService(object):
             return raster_filename
 
     @staticmethod
-    def get_tile_query(bbox, year, model, scenario, indicator):
+    def get_tile_query(bbox, year, model, scenario, indicator, bounds):
         logging.info('[QueryService] Forming rasdaman query')
         coverage = f'{scenario}_{model}_processed'
         logging.debug(f'coverage: {coverage}')
@@ -200,7 +200,7 @@ class QueryService(object):
             str(bbox['lon'][1]),
             ')]',
             ColoringHelper.normalize(
-                * ColoringHelper.get_data_bounds(indicator)
+                * bounds
             ),
             ', {Lat: "CRS:1"(0:255), Long: "CRS:1"(0:255)}),  "PNG")]'
         ]

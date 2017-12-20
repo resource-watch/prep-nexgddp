@@ -11,6 +11,7 @@ from nexgddp.services.redis_service import RedisService
 from nexgddp.helpers.coloring_helper import ColoringHelper
 from nexgddp.errors import SqlFormatError, PeriodNotValid, TableNameNotValid, GeostoreNeeded, XMLParserError, InvalidField, CoordinatesNeeded, LayerNotFound
 from nexgddp.middleware import get_bbox_by_hash, get_latlon, get_tile_attrs, get_layer, get_year, tile_exists, is_microservice
+from nexgddp.helpers.coloring_helper import ColoringHelper
 from CTRegisterMicroserviceFlask import request_to_microservice
 import datetime
 import dateutil.parser
@@ -278,17 +279,19 @@ def register_dataset():
 
 
 @nexgddp_endpoints.route('/layer/<layer>/tile/nexgddp/<int:z>/<int:x>/<int:y>', methods=['GET'])
-@tile_exists
 @get_year
+@tile_exists
 @get_layer
 @get_tile_attrs
-def get_tile(x, y, z, model, scenario, year, style, invert, indicator, layer):
+def get_tile(x, y, z, model, scenario, year, style, indicator, layer):
     """Slippy map endpoint"""
     logging.info(f'Getting tile for {x} {y} {z}')
     bbox = TileService.get_bbox(z, x, y)
     logging.debug(f"bbox: {bbox}")
-    rasterfile = QueryService.get_tile_query(bbox, year, model, scenario, indicator)
-    colored_response = ColoringHelper.colorize(rasterfile, color_ramp_name = style, invert = invert)
+    bounds = ColoringHelper.get_data_bounds(style)
+    logging.debug(bounds)
+    rasterfile = QueryService.get_tile_query(bbox, year, model, scenario, indicator, bounds)
+    colored_response = ColoringHelper.colorize(rasterfile, style = style)
 
     # Saving file in cache
     logging.debug(f'Requested path is: {request.path}')
@@ -297,7 +300,7 @@ def get_tile(x, y, z, model, scenario, year, style, invert, indicator, layer):
     # Beware of side effects!
     # ColoringHelper.colorize stores the color-coded file in the same input file
     # Uploading file to storage. 
-    StorageService.upload_file(rasterfile, layer, str(z), str(x), str(y))
+    StorageService.upload_file(rasterfile, layer, str(z), str(x), str(y), year)
     
     return colored_response, 200
 

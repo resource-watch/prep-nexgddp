@@ -70,12 +70,8 @@ def get_tile_attrs(func):
         logging.debug(f'dataset: {dataset}')
         
         logging.debug('Obtaining style')
-        layer_style = layer_config.get('color_ramp')
-        logging.debug('Inverse?')
-        color_invert = layer_config.get('invert')
-        logging.debug(f'color_invert: {color_invert}')
+        layer_style = layer_config.get('colorRamp')
         kwargs["style"] = layer_style
-        kwargs["invert"] = color_invert
         
         logging.debug('Obtaining year')
         # year = layer_config.get('year')
@@ -128,7 +124,9 @@ def tile_exists(func):
     def wrapper(*args, **kwargs):
         logging.info("[Middleware] Checking if tile exists in cache")
         logging.debug(f'request.path: {request.path}')
-        url = RedisService.get(request.path)
+        request_id = request.path + '_' + str(kwargs['year'])
+        logging.debug(request_id)
+        url = RedisService.get(request_id)
         logging.debug(f'url: {url}')
         if url is None:
             logging.debug("No tile found in cache")
