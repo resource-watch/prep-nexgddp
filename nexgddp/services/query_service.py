@@ -179,6 +179,28 @@ class QueryService(object):
             return raster_filename
 
     @staticmethod
+    def get_rasdaman_csv_query(query):
+        logging.info('[QueryService] Executing rasdaman query')
+        payload_arr = ['<?xml version="1.0" encoding="UTF-8" ?>',
+                       '<ProcessCoveragesRequest xmlns="http://www.opengis.net/wcps/1.0" service="WCPS" version="1.0.0">',
+                       '<query><abstractSyntax>',
+                       query,
+                       '</abstractSyntax></query>',
+                       '</ProcessCoveragesRequest>']
+        payload = ''.join(payload_arr)
+        headers = {'Content-Type': 'application/xml'}
+        request = Request(
+            method='POST',
+            url=RASDAMAN_URL,
+            data=payload,
+            headers=headers
+        )
+        session = Session()
+        prepped = session.prepare_request(request)
+        response = session.send(prepped)
+        return response.text
+        
+    @staticmethod
     def get_tile_query(bbox, year, model, scenario, indicator, bounds):
         logging.info('[QueryService] Forming rasdaman query')
         coverage = f'{scenario}_{model}_processed'

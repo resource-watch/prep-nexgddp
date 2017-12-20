@@ -94,16 +94,48 @@ def get_tile_attrs(func):
         return func(*args, **kwargs)
     return wrapper
 
-# def exist_tile(func):
-#     """Gets tile from cache"""
-#     @wraps(func)
-#     def wrapper(*args, **kwargs):
-#         url = RedisService.get(request.path)
-#         if url is None:
-#             return func(*args, **kwargs)
-#         else:
-#             return redirect(url)
-#     return wrapper
+def get_diff_attrs(func):
+    """Get style"""
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        req_body = request.get_json(force=True)
+        logging.debug(req_body)
+        dset_a = request.get_json().get('dset_a')
+        dataset_object_a = DatasetService.get(dset_a)
+        tablename_a =  '_'.join(dataset_object_a.get('tableName').split('/')) + '_processed'
+        logging.debug(tablename_a)
+        kwargs["dset_a"] = tablename_a
+        
+        dset_b = request.get_json().get('dset_b')
+        if dset_b:
+            dataset_object_b = DatasetService.get(dset_b)
+            tablename_b =  '_'.join(dataset_object_b.get('tableName').split('/')) + '_processed'
+            logging.debug(tablename_b)
+            kwargs["dset_b"] = tablename_b
+
+        date_a = request.get_json().get('date_a')
+        logging.debug(f'date_a: {date_a}')
+        kwargs["date_a"] = str(date_a)
+
+        date_b = request.get_json().get('date_b')
+        logging.debug(f'date_b: {date_b}')
+        kwargs["date_b"] = str(date_b)
+
+        lat = request.get_json().get('lat')
+        logging.debug(f'lat: {lat}')
+        kwargs["lat"] = str(lat)
+
+        lon = request.get_json().get('lon')
+        logging.debug(f'lon: {lon}')
+        kwargs["lon"] = str(lon)
+
+        varnames = request.get_json().get('varnames')
+        logging.debug(f'varnames: {varnames}')
+        kwargs["varnames"] = varnames
+        
+        return func(*args, **kwargs)
+    return wrapper
+
 
 def get_layer(func):
     """Get geodata"""

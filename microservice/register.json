@@ -89,39 +89,47 @@
                 "path": "/api/v1/nexgddp/rest-datasets/nexgddp"
             }
         },
-        {
-	    "path": "/v1/layer/:layer/tile/nexgddp/:z/:x/:y",
-	    "method": "GET",
-	    "redirect": {
-		"method": "GET",
-		"path": "/api/v1/nexgddp/layer/:layer/tile/nexgddp/:x/:y/:z"
-	    }
-        },
 	{
-		"path": "/v1/layer/:layer/expire-cache",
-		"method": "DELETE",
-		"authenticated": true,
-		"redirect": {
-			"method": "DELETE",
-			"path": "/api/v1/layer/:layer/expire-cache"
-		},
-        "filters": [
-            {
-                "name": "layer",
-                "path": "/v1/layer/:layer",
+            "path": "/v1/nexgddp/diff",
+            "method": "POST",
+            "redirect": {
+                "method": "POST",
+                "path": "/api/v1/nexgddp/diff"
+            }
+        },
+        {
+            "path": "/v1/layer/:layer/tile/nexgddp/:z/:x/:y",
+            "method": "GET",
+            "redirect": {
                 "method": "GET",
-                "params": {
-                    "layer": "layer"
-                },
-                "compare": {
-                    "data": {
-                        "attributes": {
-                            "provider": "nexgddp"
+                "path": "/api/v1/nexgddp/layer/:layer/tile/nexgddp/:x/:y/:z"
+            }
+        },
+        {
+            "path": "/v1/layer/:layer/expire-cache",
+            "method": "DELETE",
+            "authenticated": true,
+            "redirect": {
+                "method": "DELETE",
+                "path": "/api/v1/layer/:layer/expire-cache"
+            },
+            "filters": [
+                {
+                    "name": "layer",
+                    "path": "/v1/layer/:layer",
+                    "method": "GET",
+                    "params": {
+                        "layer": "layer"
+                    },
+                    "compare": {
+                        "data": {
+                            "attributes": {
+                                "provider": "nexgddp"
+                            }
                         }
                     }
                 }
-            }
-        ]
-	}
+            ]
+        }
     ]
 }

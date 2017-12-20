@@ -8,9 +8,10 @@ from nexgddp.services.xml_service import XMLService
 from nexgddp.services.tile_service import TileService
 from nexgddp.services.storage_service import StorageService
 from nexgddp.services.redis_service import RedisService
+from nexgddp.services.diff_service import DiffService
 from nexgddp.helpers.coloring_helper import ColoringHelper
 from nexgddp.errors import SqlFormatError, PeriodNotValid, TableNameNotValid, GeostoreNeeded, XMLParserError, InvalidField, CoordinatesNeeded, LayerNotFound
-from nexgddp.middleware import get_bbox_by_hash, get_latlon, get_tile_attrs, get_layer, get_year, tile_exists, is_microservice
+from nexgddp.middleware import get_bbox_by_hash, get_latlon, get_tile_attrs, get_layer, get_year, tile_exists, is_microservice, get_diff_attrs
 from nexgddp.helpers.coloring_helper import ColoringHelper
 from CTRegisterMicroserviceFlask import request_to_microservice
 import datetime
@@ -310,3 +311,12 @@ def expire_cache(layer):
     logging.info('[NEXGDDP-ROUTER] Expiring the tile cache')
     RedisService.expire_layer(layer)
     StorageService.delete_folder(layer)
+
+
+@nexgddp_endpoints.route('/diff', methods=['POST'])
+@get_diff_attrs
+def diff(dset_a, date_a, date_b, lat, lon, varnames, dset_b = None):
+    logging.info('[NEXGDDP-ROUTER] Calculating diff')
+    diff_value = DiffService.get_diff_value(dset_a, date_a, date_b, lat, lon, varnames, dset_b)
+    # diff_timestep = DiffService.get_timestep(date_a, date_b)
+    return jsonify({"value": diff_value}), 200
