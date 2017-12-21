@@ -265,15 +265,23 @@ class QueryService(object):
         logging.debug(f'coverage_b: {dset_b}')
         logging.debug(f'bounds: {bounds}')
 
-        lower_bound_expr = ' - ' + str(bounds[0]) if float(bounds[0]) > 0 else str( ' + ' +  str(abs(bounds[0])) )
-        bounds_range = str(float(bounds[1]) - float(bounds[0]))
+        lower_bound_expr = ' - ' + str(bounds[0]) if float(bounds[0]) >= 0 else str( ' + ' +  str(abs(bounds[0])) )
         logging.debug(lower_bound_expr)
+        bounds_range = str(float(bounds[1]) - float(bounds[0]))
         logging.debug(bounds_range)
-        # bounds_expr = 
-        
         # x := (c - a) / (b - a)
-        query = f"for cov1 in ({coverage_a}), cov2 in ({dset_b}) return encode(scale((((cov1.{indicator})[ansi(\"{year}\"), Lat(-85:85),Long(-175:175)] - (cov2.{indicator})[ansi(\"{year_b}\"), Lat(-85:85),Long(-175:175)]) {lower_bound_expr}) * (255 / {bounds_range})," +  "{Lat: \"CRS:1\"(0:255), Long: \"CRS:1\"(0:255)}),\"PNG\")]"
-        logging.debug(f"query: {query}")
+        bbox_expr = f" Lat({bbox['lat'][0]}:{bbox['lat'][1]}),Long({bbox['lon'][0]}:{bbox['lon'][1]})]"
+        query = ''.join([
+            f"for cov1 in ({dset_b}), cov2 in ({coverage_a}) return encode(scale(",
+            f"(((cov2.{indicator})[ansi(\"{year_b}\"),",
+            bbox_expr,
+            f" - (cov1.{indicator})[ansi(\"{year}\"),",
+            bbox_expr,
+            f") {lower_bound_expr} ) * (255 / ({bounds_range} )),",
+            "{Lat: \"CRS:1\"(0:255), Long: \"CRS:1\"(0:255)}),\"PNG\")]" # Not a f-expression
+            ])
+
+        logging.debug(query)
         
         envelope_list = [ '<?xml version="1.0" encoding="UTF-8" ?>',
                           '<ProcessCoveragesRequest xmlns="http://www.opengis.net/wcps/1.0" service="WCPS" version="1.0.0">',

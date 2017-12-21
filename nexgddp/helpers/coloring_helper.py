@@ -39,6 +39,9 @@ class ColoringHelper(object):
             lambda stop: float(1/(stop_range[1]-stop_range[0]) * (stop-stop_range[1]) + 1),
             stops
         ))
+
+        norms[0] = 0.0 # Sometimes a *really* small float appears
+        norms[-1] = 1.0
         logging.debug(f"norms: {norms}")
         colormap = LinearSegmentedColormap.from_list("custom_color_ramp", list(zip(norms, sorted_values)))
         logging.debug(f"colormap: {colormap}")

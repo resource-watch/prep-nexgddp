@@ -281,7 +281,7 @@ def register_dataset():
 
 @nexgddp_endpoints.route('/layer/<layer>/tile/nexgddp/<int:z>/<int:x>/<int:y>', methods=['GET'])
 @get_year
-#tile_exists
+@tile_exists
 @get_layer
 @get_tile_attrs
 def get_tile(x, y, z, model, scenario, year, style, indicator, layer, compare_year = None, dset_b = None):
@@ -307,7 +307,7 @@ def get_tile(x, y, z, model, scenario, year, style, indicator, layer, compare_ye
     # Beware of side effects!
     # ColoringHelper.colorize stores the color-coded file in the same input file
     # Uploading file to storage. 
-    #StorageService.upload_file(rasterfile, layer, str(z), str(x), str(y), year)
+    StorageService.upload_file(rasterfile, layer, str(z), str(x), str(y), year, compare_year, dset_b)
     
     return colored_response, 200
 
