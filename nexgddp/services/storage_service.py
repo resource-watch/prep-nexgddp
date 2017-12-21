@@ -16,7 +16,7 @@ class StorageService(object):
             return None
         logging.debug(f'filename is: {filename}')
 
-        bucket = client.get_bucket('gee-tiles')
+        bucket = client.get_bucket('nexgddp-tiles')
         blob = bucket.blob(layer + '/' + z + '/' + x + '/' + y + '/' + str(year) + '.png')
         with open(filename, 'rb') as tile_file:
             blob.upload_from_file(tile_file)
@@ -27,7 +27,7 @@ class StorageService(object):
 
     @staticmethod
     def delete_folder(layer): 
-        bucket = client.get_bucket('gee-tiles')
+        bucket = client.get_bucket('nexgddp-tiles')
         #blob = bucket.blob(layer+"/0/0/0/tile.png")
         list = bucket.list_blobs(prefix=layer)
         for blob in list:

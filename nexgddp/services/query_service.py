@@ -273,9 +273,9 @@ class QueryService(object):
         bbox_expr = f" Lat({bbox['lat'][0]}:{bbox['lat'][1]}),Long({bbox['lon'][0]}:{bbox['lon'][1]})]"
         query = ''.join([
             f"for cov1 in ({dset_b}), cov2 in ({coverage_a}) return encode(scale(",
-            f"(((cov2.{indicator})[ansi(\"{year_b}\"),",
+            f"(((cov1.{indicator})[ansi(\"{year_b}\"),",
             bbox_expr,
-            f" - (cov1.{indicator})[ansi(\"{year}\"),",
+            f" - (cov2.{indicator})[ansi(\"{year}\"),",
             bbox_expr,
             f") {lower_bound_expr} ) * (255 / ({bounds_range} )),",
             "{Lat: \"CRS:1\"(0:255), Long: \"CRS:1\"(0:255)}),\"PNG\")]" # Not a f-expression
