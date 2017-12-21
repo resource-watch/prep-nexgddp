@@ -8,9 +8,10 @@ from nexgddp.services.xml_service import XMLService
 from nexgddp.services.tile_service import TileService
 from nexgddp.services.storage_service import StorageService
 from nexgddp.services.redis_service import RedisService
+from nexgddp.services.diff_service import DiffService
 from nexgddp.helpers.coloring_helper import ColoringHelper
 from nexgddp.errors import SqlFormatError, PeriodNotValid, TableNameNotValid, GeostoreNeeded, XMLParserError, InvalidField, CoordinatesNeeded, LayerNotFound
-from nexgddp.middleware import get_bbox_by_hash, get_latlon, get_tile_attrs, get_layer, get_year, tile_exists, is_microservice
+from nexgddp.middleware import get_bbox_by_hash, get_latlon, get_tile_attrs, get_layer, get_year, tile_exists, is_microservice, get_diff_attrs
 from nexgddp.helpers.coloring_helper import ColoringHelper
 from CTRegisterMicroserviceFlask import request_to_microservice
 import datetime
@@ -283,14 +284,20 @@ def register_dataset():
 @tile_exists
 @get_layer
 @get_tile_attrs
-def get_tile(x, y, z, model, scenario, year, style, indicator, layer):
-    """Slippy map endpoint"""
+def get_tile(x, y, z, model, scenario, year, style, indicator, layer, compare_year = None, dset_b = None):
     logging.info(f'Getting tile for {x} {y} {z}')
+    logging.debug(compare_year)
     bbox = TileService.get_bbox(z, x, y)
     logging.debug(f"bbox: {bbox}")
     bounds = ColoringHelper.get_data_bounds(style)
     logging.debug(bounds)
-    rasterfile = QueryService.get_tile_query(bbox, year, model, scenario, indicator, bounds)
+    if compare_year:
+        logging.debug(f"[rout] compare_year: {compare_year}")
+        if  not dset_b:
+            dset_b = f"{scenario}_{model}_processed"
+        rasterfile = QueryService.get_tile_diff_query(bbox, year, model, scenario, indicator, bounds, compare_year, dset_b)
+    else:
+        rasterfile = QueryService.get_tile_query(bbox, year, model, scenario, indicator, bounds)
     colored_response = ColoringHelper.colorize(rasterfile, style = style)
 
     # Saving file in cache
@@ -300,7 +307,7 @@ def get_tile(x, y, z, model, scenario, year, style, indicator, layer):
     # Beware of side effects!
     # ColoringHelper.colorize stores the color-coded file in the same input file
     # Uploading file to storage. 
-    StorageService.upload_file(rasterfile, layer, str(z), str(x), str(y), year)
+    StorageService.upload_file(rasterfile, layer, str(z), str(x), str(y), year, compare_year, dset_b)
     
     return colored_response, 200
 
@@ -310,3 +317,12 @@ def expire_cache(layer):
     logging.info('[NEXGDDP-ROUTER] Expiring the tile cache')
     RedisService.expire_layer(layer)
     StorageService.delete_folder(layer)
+
+
+@nexgddp_endpoints.route('/diff', methods=['POST'])
+@get_diff_attrs
+def diff(dset_a, date_a, date_b, lat, lon, varnames, dset_b = None):
+    logging.info('[NEXGDDP-ROUTER] Calculating diff')
+    diff_value = DiffService.get_diff_value(dset_a, date_a, date_b, lat, lon, varnames, dset_b)
+    # diff_timestep = DiffService.get_timestep(date_a, date_b)
+    return jsonify({"value": diff_value}), 200

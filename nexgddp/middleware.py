@@ -56,7 +56,6 @@ def get_year(func):
         logging.debug(f"year: {year}")
         if not year:
             kwargs["year"] = None
-            return func(*args, **kwargs)
         return func(*args, **kwargs)
     return wrapper
 
@@ -77,33 +76,79 @@ def get_tile_attrs(func):
         # year = layer_config.get('year')
         # logging.debug(f'year: {year}')
         # kwargs["year"] = year
-
         logging.debug('Obtaining indicator')
         indicator = layer_config.get('indicator')
         logging.debug(f'indicator: {indicator}')
         kwargs["indicator"] = indicator
-
-        
+  
         logging.debug('Obtaining scenario and model')
         dataset_object = DatasetService.get(dataset)
         tablename = dataset_object.get('tableName', None)
         logging.debug(f'tablename: {tablename}')
         kwargs['model'] = tablename.split('/')[1]
         kwargs['scenario'] = tablename.split('/')[0]
-        del kwargs['layer_object']
+
+
+        is_comparison = layer_config.get('compareWith')
+        logging.debug(f"is_comparison: {is_comparison}")
+        if is_comparison:
+            compare_year = request.args.get('compareYear', None)
+            kwargs["compare_year"] = str(compare_year)
+            logging.debug(f"compare_year: {compare_year}")
+            dataset_b_id = request.args.get('compareTo', None)
+            if dataset_b_id:
+                dataset_b_object = DatasetService.get(dataset_b_id)
+                tablename_b = '_'.join(dataset_b_object.get('tableName', None).split('/')) + '_processed'
+                kwargs["dset_b"] = tablename_b
+                logging.debug(f"tablename_b: {tablename_b}")
+            else:
+                kwargs["dset_b"] = None
+        del kwargs["layer_object"]
         return func(*args, **kwargs)
     return wrapper
 
-# def exist_tile(func):
-#     """Gets tile from cache"""
-#     @wraps(func)
-#     def wrapper(*args, **kwargs):
-#         url = RedisService.get(request.path)
-#         if url is None:
-#             return func(*args, **kwargs)
-#         else:
-#             return redirect(url)
-#     return wrapper
+def get_diff_attrs(func):
+    """Get style"""
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        req_body = request.get_json(force=True)
+        logging.debug(req_body)
+        dset_a = request.get_json().get('dset_a')
+        dataset_object_a = DatasetService.get(dset_a)
+        tablename_a =  '_'.join(dataset_object_a.get('tableName').split('/')) + '_processed'
+        logging.debug(tablename_a)
+        kwargs["dset_a"] = tablename_a
+        
+        dset_b = request.get_json().get('dset_b')
+        if dset_b:
+            dataset_object_b = DatasetService.get(dset_b)
+            tablename_b =  '_'.join(dataset_object_b.get('tableName').split('/')) + '_processed'
+            logging.debug(tablename_b)
+            kwargs["dset_b"] = tablename_b
+
+        date_a = request.get_json().get('date_a')
+        logging.debug(f'date_a: {date_a}')
+        kwargs["date_a"] = str(date_a)
+
+        date_b = request.get_json().get('date_b')
+        logging.debug(f'date_b: {date_b}')
+        kwargs["date_b"] = str(date_b)
+
+        lat = request.get_json().get('lat')
+        logging.debug(f'lat: {lat}')
+        kwargs["lat"] = str(lat)
+
+        lon = request.get_json().get('lon')
+        logging.debug(f'lon: {lon}')
+        kwargs["lon"] = str(lon)
+
+        varnames = request.get_json().get('varnames')
+        logging.debug(f'varnames: {varnames}')
+        kwargs["varnames"] = varnames
+        
+        return func(*args, **kwargs)
+    return wrapper
+
 
 def get_layer(func):
     """Get geodata"""

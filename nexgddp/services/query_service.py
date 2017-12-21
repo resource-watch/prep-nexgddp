@@ -179,6 +179,28 @@ class QueryService(object):
             return raster_filename
 
     @staticmethod
+    def get_rasdaman_csv_query(query):
+        logging.info('[QueryService] Executing rasdaman query')
+        payload_arr = ['<?xml version="1.0" encoding="UTF-8" ?>',
+                       '<ProcessCoveragesRequest xmlns="http://www.opengis.net/wcps/1.0" service="WCPS" version="1.0.0">',
+                       '<query><abstractSyntax>',
+                       query,
+                       '</abstractSyntax></query>',
+                       '</ProcessCoveragesRequest>']
+        payload = ''.join(payload_arr)
+        headers = {'Content-Type': 'application/xml'}
+        request = Request(
+            method='POST',
+            url=RASDAMAN_URL,
+            data=payload,
+            headers=headers
+        )
+        session = Session()
+        prepped = session.prepare_request(request)
+        response = session.send(prepped)
+        return response.text
+        
+    @staticmethod
     def get_tile_query(bbox, year, model, scenario, indicator, bounds):
         logging.info('[QueryService] Forming rasdaman query')
         coverage = f'{scenario}_{model}_processed'
@@ -209,6 +231,62 @@ class QueryService(object):
                           '<ProcessCoveragesRequest xmlns="http://www.opengis.net/wcps/1.0" service="WCPS" version="1.0.0">',
                           '<query><abstractSyntax>',
                           *query_list,
+                          '</abstractSyntax></query>',
+                          '</ProcessCoveragesRequest>'
+        ]
+
+        payload = ''.join(envelope_list)
+        logging.debug(f"payload: {payload}")
+        headers = {'Content-Type': 'application/xml'}
+        request = Request(
+            method='POST',
+            url=RASDAMAN_URL,
+            data=payload,
+            headers=headers
+        )
+        session = Session()
+        prepped = session.prepare_request(request)
+        response = session.send(prepped)
+        if response.status_code == 404:
+            raise PeriodNotValid('Data not found')
+        with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as f:
+            for chunk in response.iter_content(chunk_size=1024):
+                f.write(chunk)
+            raster_filename = f.name
+            logging.debug(f"[QueryService] Temporary raster filename: {raster_filename}")
+            f.close()
+            return raster_filename
+
+    @staticmethod
+    def get_tile_diff_query(bbox, year, model, scenario, indicator, bounds, year_b, dset_b):
+        logging.info('[QueryService] Forming rasdaman query')
+        coverage_a = f'{scenario}_{model}_processed'
+        logging.debug(f'coverage_a: {coverage_a}')
+        logging.debug(f'coverage_b: {dset_b}')
+        logging.debug(f'bounds: {bounds}')
+
+        lower_bound_expr = ' - ' + str(bounds[0]) if float(bounds[0]) >= 0 else str( ' + ' +  str(abs(bounds[0])) )
+        logging.debug(lower_bound_expr)
+        bounds_range = str(float(bounds[1]) - float(bounds[0]))
+        logging.debug(bounds_range)
+        # x := (c - a) / (b - a)
+        bbox_expr = f" Lat({bbox['lat'][0]}:{bbox['lat'][1]}),Long({bbox['lon'][0]}:{bbox['lon'][1]})]"
+        query = ''.join([
+            f"for cov1 in ({dset_b}), cov2 in ({coverage_a}) return encode(scale(",
+            f"(((cov1.{indicator})[ansi(\"{year_b}\"),",
+            bbox_expr,
+            f" - (cov2.{indicator})[ansi(\"{year}\"),",
+            bbox_expr,
+            f") {lower_bound_expr} ) * (255 / ({bounds_range} )),",
+            "{Lat: \"CRS:1\"(0:255), Long: \"CRS:1\"(0:255)}),\"PNG\")]" # Not a f-expression
+            ])
+
+        logging.debug(query)
+        
+        envelope_list = [ '<?xml version="1.0" encoding="UTF-8" ?>',
+                          '<ProcessCoveragesRequest xmlns="http://www.opengis.net/wcps/1.0" service="WCPS" version="1.0.0">',
+                          '<query><abstractSyntax>',
+                          query,
                           '</abstractSyntax></query>',
                           '</ProcessCoveragesRequest>'
         ]
