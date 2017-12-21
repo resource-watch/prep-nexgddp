@@ -281,17 +281,23 @@ def register_dataset():
 
 @nexgddp_endpoints.route('/layer/<layer>/tile/nexgddp/<int:z>/<int:x>/<int:y>', methods=['GET'])
 @get_year
-@tile_exists
+#tile_exists
 @get_layer
 @get_tile_attrs
-def get_tile(x, y, z, model, scenario, year, style, indicator, layer):
-    """Slippy map endpoint"""
+def get_tile(x, y, z, model, scenario, year, style, indicator, layer, compare_year = None, dset_b = None):
     logging.info(f'Getting tile for {x} {y} {z}')
+    logging.debug(compare_year)
     bbox = TileService.get_bbox(z, x, y)
     logging.debug(f"bbox: {bbox}")
     bounds = ColoringHelper.get_data_bounds(style)
     logging.debug(bounds)
-    rasterfile = QueryService.get_tile_query(bbox, year, model, scenario, indicator, bounds)
+    if compare_year:
+        logging.debug(f"[rout] compare_year: {compare_year}")
+        if  not dset_b:
+            dset_b = f"{scenario}_{model}_processed"
+        rasterfile = QueryService.get_tile_diff_query(bbox, year, model, scenario, indicator, bounds, compare_year, dset_b)
+    else:
+        rasterfile = QueryService.get_tile_query(bbox, year, model, scenario, indicator, bounds)
     colored_response = ColoringHelper.colorize(rasterfile, style = style)
 
     # Saving file in cache
@@ -301,7 +307,7 @@ def get_tile(x, y, z, model, scenario, year, style, indicator, layer):
     # Beware of side effects!
     # ColoringHelper.colorize stores the color-coded file in the same input file
     # Uploading file to storage. 
-    StorageService.upload_file(rasterfile, layer, str(z), str(x), str(y), year)
+    #StorageService.upload_file(rasterfile, layer, str(z), str(x), str(y), year)
     
     return colored_response, 200
 

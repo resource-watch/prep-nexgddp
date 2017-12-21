@@ -257,6 +257,54 @@ class QueryService(object):
             f.close()
             return raster_filename
 
+    @staticmethod
+    def get_tile_diff_query(bbox, year, model, scenario, indicator, bounds, year_b, dset_b):
+        logging.info('[QueryService] Forming rasdaman query')
+        coverage_a = f'{scenario}_{model}_processed'
+        logging.debug(f'coverage_a: {coverage_a}')
+        logging.debug(f'coverage_b: {dset_b}')
+        logging.debug(f'bounds: {bounds}')
+
+        lower_bound_expr = ' - ' + str(bounds[0]) if float(bounds[0]) > 0 else str( ' + ' +  str(abs(bounds[0])) )
+        bounds_range = str(float(bounds[1]) - float(bounds[0]))
+        logging.debug(lower_bound_expr)
+        logging.debug(bounds_range)
+        # bounds_expr = 
+        
+        # x := (c - a) / (b - a)
+        query = f"for cov1 in ({coverage_a}), cov2 in ({dset_b}) return encode(scale((((cov1.{indicator})[ansi(\"{year}\"), Lat(-85:85),Long(-175:175)] - (cov2.{indicator})[ansi(\"{year_b}\"), Lat(-85:85),Long(-175:175)]) {lower_bound_expr}) * (255 / {bounds_range})," +  "{Lat: \"CRS:1\"(0:255), Long: \"CRS:1\"(0:255)}),\"PNG\")]"
+        logging.debug(f"query: {query}")
+        
+        envelope_list = [ '<?xml version="1.0" encoding="UTF-8" ?>',
+                          '<ProcessCoveragesRequest xmlns="http://www.opengis.net/wcps/1.0" service="WCPS" version="1.0.0">',
+                          '<query><abstractSyntax>',
+                          query,
+                          '</abstractSyntax></query>',
+                          '</ProcessCoveragesRequest>'
+        ]
+
+        payload = ''.join(envelope_list)
+        logging.debug(f"payload: {payload}")
+        headers = {'Content-Type': 'application/xml'}
+        request = Request(
+            method='POST',
+            url=RASDAMAN_URL,
+            data=payload,
+            headers=headers
+        )
+        session = Session()
+        prepped = session.prepare_request(request)
+        response = session.send(prepped)
+        if response.status_code == 404:
+            raise PeriodNotValid('Data not found')
+        with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as f:
+            for chunk in response.iter_content(chunk_size=1024):
+                f.write(chunk)
+            raster_filename = f.name
+            logging.debug(f"[QueryService] Temporary raster filename: {raster_filename}")
+            f.close()
+            return raster_filename
+
         
     @staticmethod
     def get_rasdaman_fields(scenario, model):

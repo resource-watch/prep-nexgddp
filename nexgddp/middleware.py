@@ -56,7 +56,6 @@ def get_year(func):
         logging.debug(f"year: {year}")
         if not year:
             kwargs["year"] = None
-            return func(*args, **kwargs)
         return func(*args, **kwargs)
     return wrapper
 
@@ -77,20 +76,34 @@ def get_tile_attrs(func):
         # year = layer_config.get('year')
         # logging.debug(f'year: {year}')
         # kwargs["year"] = year
-
         logging.debug('Obtaining indicator')
         indicator = layer_config.get('indicator')
         logging.debug(f'indicator: {indicator}')
         kwargs["indicator"] = indicator
-
-        
+  
         logging.debug('Obtaining scenario and model')
         dataset_object = DatasetService.get(dataset)
         tablename = dataset_object.get('tableName', None)
         logging.debug(f'tablename: {tablename}')
         kwargs['model'] = tablename.split('/')[1]
         kwargs['scenario'] = tablename.split('/')[0]
-        del kwargs['layer_object']
+
+
+        is_comparison = layer_config.get('compareWith')
+        logging.debug(f"is_comparison: {is_comparison}")
+        if is_comparison:
+            compare_year = request.args.get('compareYear', None)
+            kwargs["compare_year"] = str(compare_year)
+            logging.debug(f"compare_year: {compare_year}")
+            dataset_b_id = request.args.get('compareTo', None)
+            if dataset_b_id:
+                dataset_b_object = DatasetService.get(dataset_b_id)
+                tablename_b = '_'.join(dataset_b_object.get('tableName', None).split('/')) + '_processed'
+                kwargs["dset_b"] = tablename_b
+                logging.debug(f"tablename_b: {tablename_b}")
+            else:
+                kwargs["dset_b"] = None
+        del kwargs["layer_object"]
         return func(*args, **kwargs)
     return wrapper
 
