@@ -326,3 +326,84 @@ def diff(dset_a, date_a, date_b, lat, lon, varnames, dset_b = None):
     diff_value = DiffService.get_diff_value(dset_a, date_a, date_b, lat, lon, varnames, dset_b)
     # diff_timestep = DiffService.get_timestep(date_a, date_b)
     return jsonify({"value": diff_value}), 200
+
+@nexgddp_endpoints.route('/info/<indicator>', methods=['GET'])
+def getInfoIndicator(indicator):
+    logging.info('[NEXGDDP-ROUTER] Get info of indicator')
+    body = {}
+    body["scenarios"] = [{
+        "label": "Low Emissions",
+        "id": "rcp45"
+    }, {
+        "label": "High Emissions",
+        "id": "rcp85"
+    }]
+    body["temporalResolution"] = [{
+        "label": "Decadal",
+        "id": "decadal",
+        "periods": [{
+            "label": "1971",
+            "id": "1971-01-01T00:00:00.000Z"
+        }, {
+            "label": "1981",
+            "id": "1981-01-01T00:00:00.000Z"
+        }, {
+            "label": "1991",
+            "id": "1991-01-01T00:00:00.000Z"
+        }, {
+            "label": "2001",
+            "id": "2001-01-01T00:00:00.000Z"
+        }, {
+            "label": "2011",
+            "id": "2011-01-01T00:00:00.000Z"
+        }, {
+            "label": "2021",
+            "id": "2021-01-01T00:00:00.000Z"
+        }, {
+            "label": "2031",
+            "id": "2031-01-01T00:00:00.000Z"
+        }, {
+            "label": "2041",
+            "id": "2041-01-01T00:00:00.000Z"
+        }, {
+            "label": "2051",
+            "id": "2051-01-01T00:00:00.000Z"
+        }, {
+            "label": "2061",
+            "id": "2061-01-01T00:00:00.000Z"
+        }, {
+            "label": "2071",
+            "id": "2071-01-01T00:00:00.000Z"
+        }, {
+            "label": "2081",
+            "id": "2081-01-01T00:00:00.000Z"
+        }]        
+    }, {
+        "label": "30 years",
+        "id": "30_y",
+        "periods": [{
+            "label": "1971",
+            "id": "1971-01-01T00:00:00.000Z"
+        }, {
+            "label": "2021",
+            "id": "2021-01-01T00:00:00.000Z"
+        }, {
+            "label": "2051",
+            "id": "2051-01-01T00:00:00.000Z"
+        }]
+    }] 
+    return jsonify(body), 200
+
+@nexgddp_endpoints.route('/dataset/<indicator>/<scenario>/<temporal_res>', methods=['GET'])
+def getDataset(indicator, scenario, temporal_res):
+    logging.info('[NEXGDDP-ROUTER] Get info of indicator')
+    datasets = request_to_microservice({
+        'uri': '/dataset?includes=layer&tableName='+ indicator + '/' + scenario + '_' + temporal_res,
+        'method': 'GET'
+    })
+    if datasets.get('data') and len(datasets.get('data')) > 0:
+        return jsonify({"data": datasets.get('data')[0]}), 200
+    return jsonify({"errors": [{
+        "status": 404,
+        "detail": "Dataset doesn't exist"
+    }]}), 404

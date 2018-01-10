@@ -130,6 +130,20 @@
                     }
                 }
             ]
+        }, {
+            "path": "/v1/nexgddp/info/:indicator",
+            "method": "GET",
+            "redirect": {
+                "method": "GET",
+                "path": "/api/v1/nexgddp/info/:indicator"
+            }
+        }, {
+            "path": "/v1/nexgddp/dataset/:indicator/:scenario/:temporal_res",
+            "method": "GET",
+            "redirect": {
+                "method": "GET",
+                "path": "/api/v1/nexgddp/dataset/:indicator/:scenario/:temporal_res"
+            }
         }
     ]
 }
