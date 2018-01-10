@@ -398,7 +398,7 @@ def getInfoIndicator(indicator):
 def getDataset(indicator, scenario, temporal_res):
     logging.info('[NEXGDDP-ROUTER] Get info of indicator')
     datasets = request_to_microservice({
-        'uri': '/dataset?includes=layer&tableName='+ indicator + '/' + scenario + '_' + temporal_res,
+        'uri': '/dataset?includes=layer&tableName='+ indicator + '/' + scenario + '_' + temporal_res + '&env=' + request.args.get("env", 'production'),
         'method': 'GET'
     })
     if datasets.get('data') and len(datasets.get('data')) > 0:
