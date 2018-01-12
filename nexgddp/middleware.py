@@ -157,7 +157,10 @@ def get_layer(func):
         logging.debug('Getting layer')
         layer = request.view_args.get('layer', None)
         logging.debug(f'layer: {layer}')
-        layer_object = LayerService.get(layer)
+        try:
+            layer_object = LayerService.get(layer)
+        except LayerNotFound as e:
+            return error(status=400, detail='Layer not found')
         logging.debug(f'layer_object: {layer_object}')
         kwargs["layer_object"] = layer_object
         return func(*args, **kwargs)

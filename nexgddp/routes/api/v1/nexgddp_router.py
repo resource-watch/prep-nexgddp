@@ -72,54 +72,108 @@ def parse_year(value):
         return value
     else:
         try:
-            result = dateutil.parser.parse(value).year
-            return int(result)
+            result = dateutil.parser.parse(value).strftime('%Y-%m-%d')
+            return result
         except Error as e:
             raise PeriodNotValid("Supplied dates are invalid")
-            
+
+def get_list_years(resolution):
+    return {
+        'decadal': [
+            '1971-01-01T00:00:00.000Z',
+            '1981-01-01T00:00:00.000Z',
+            '1991-01-01T00:00:00.000Z',
+            '2001-01-01T00:00:00.000Z',
+            '2011-01-01T00:00:00.000Z',
+            '2021-01-01T00:00:00.000Z',
+            '2031-01-01T00:00:00.000Z',
+            '2041-01-01T00:00:00.000Z',
+            '2051-01-01T00:00:00.000Z',
+            '2061-01-01T00:00:00.000Z',
+            '2071-01-01T00:00:00.000Z',
+            '2081-01-01T00:00:00.000Z'
+        ],
+        'y': [ # 30_y - to fix
+            '1971-01-01T00:00:00.000Z',
+            '2021-01-01T00:00:00.000Z',
+            '2051-01-01T00:00:00.000Z'
+        ],
+        'monthly': [
+            '1971-01-01T00:00:00.000Z',
+            '1971-02-01T00:00:00.000Z',
+            '1971-03-01T00:00:00.000Z',
+            '1971-04-01T00:00:00.000Z',
+            '1971-05-01T00:00:00.000Z',
+            '1971-06-01T00:00:00.000Z',
+            '1971-07-01T00:00:00.000Z',
+            '1971-08-01T00:00:00.000Z',
+            '1971-09-01T00:00:00.000Z',
+            '1971-10-01T00:00:00.000Z',
+            '1971-11-01T00:00:00.000Z',
+            '1971-12-01T00:00:00.000Z',
+            '2021-01-01T00:00:00.000Z',
+            '2021-02-01T00:00:00.000Z',
+            '2021-03-01T00:00:00.000Z',
+            '2021-04-01T00:00:00.000Z',
+            '2021-05-01T00:00:00.000Z',
+            '2021-06-01T00:00:00.000Z',
+            '2021-07-01T00:00:00.000Z',
+            '2021-08-01T00:00:00.000Z',
+            '2021-09-01T00:00:00.000Z',
+            '2021-10-01T00:00:00.000Z',
+            '2021-11-01T00:00:00.000Z',
+            '2021-12-01T00:00:00.000Z',
+            '2051-01-01T00:00:00.000Z',
+            '2051-02-01T00:00:00.000Z',
+            '2051-03-01T00:00:00.000Z',
+            '2051-04-01T00:00:00.000Z',
+            '2051-05-01T00:00:00.000Z',
+            '2051-06-01T00:00:00.000Z',
+            '2051-07-01T00:00:00.000Z',
+            '2051-08-01T00:00:00.000Z',
+            '2051-09-01T00:00:00.000Z',
+            '2051-10-01T00:00:00.000Z',
+            '2051-11-01T00:00:00.000Z',
+            '2051-12-01T00:00:00.000Z'
+        ],
+        'seasonal': []
+    }.get(resolution, [])
+
+def get_years_where(where_sql, temporal_resolution):
+    if where_sql["type"] == 'between':
+        start_stop_years = sorted(list(map(lambda arg: arg['value'], where_sql['arguments'])))
+        logging.debug(f"start_stop_years: {start_stop_years}")
+        parsed = sorted(list(map(lambda date: dateutil.parser.parse(str(date), fuzzy=True, ignoretz = True, dayfirst=False, yearfirst = True).replace(tzinfo=None), start_stop_years)))
+        logging.debug(parsed[0].isoformat())
+        all_years = list(map(lambda date: dateutil.parser.parse(date, fuzzy=True).replace(tzinfo=None), get_list_years(temporal_resolution)))
+        final_years = list(map(
+            lambda date: date.isoformat(),
+            [date for date in all_years if date <= parsed[1] and date >= parsed[0]]
+        ))
+        
+        logging.debug(f"parsed: {parsed}")
+        logging.debug(f"all_years: {all_years}")
+        logging.debug(f"final_years: {final_years}")
+
+        if final_years == []:
+            raise PeriodNotValid("Supplied dates are invalid")
+
+    elif where_sql["type"] == "operator" and where_sql["value"] == '=':
+        current_year = where_sql['right']['value'].strip("'")
+        final_years = [current_year, current_year]
+    return final_years
 
 def get_years(json_sql, temporal_resolution):
-    stride = 10 if temporal_resolution == 'decadal' else 1
+    list_years = get_list_years(temporal_resolution)
+    logging.debug(f"temporal_resolution: {temporal_resolution}")
+    logging.debug(f"list_years: {list_years}")
     where_sql = json_sql.get('where', None)
     logging.debug(f"where_sql: {where_sql}")
     if where_sql is None:
-        return []
-    years = []
-    if where_sql.get('type', None) == 'between':
-        years = list(
-            map(
-                lambda argument: parse_year(argument.get('value')),
-                where_sql.get('arguments')
-            )
-        )
-        logging.debug(years)
-        years = list(range(parse_year(years[0]), parse_year(years[1])+1, stride))
-        logging.debug(years)
-        years = [year for year in years if year in [1971, 2021, 2051]] if temporal_resolution == '30y' else years
-        # Hacky, to solve later - need to find a better way to deal with irregular time series
-        if years[0] < 1971:
-            raise PeriodNotValid("Supplied dates are invalid")
-        return years
-    elif where_sql.get('type', None) == 'conditional' or where_sql.get('type', None) == 'operator':
-        def get_years_node(node):
-            if node.get('type') == 'operator':
-                if node.get('left').get('value') == 'year' or node.get('left').get('value') == 'year':
-                    value = node.get('left') if node.get('left').get('type') == 'number' else node.get('right')
-                    years.append(value.get('value'))
-            else:
-                if node.get('type') == 'conditional':
-                    get_years_node(node.get('left'))
-                    get_years_node(node.get('right'))
-        get_years_node(where_sql)
-        years.sort()
-        if len(years) > 1:
-            years = list(range(
-                parse_year(years[0]),
-                parse_year(years[1])+1 )
-            )
-        else:
-            years = years
-        return years
+        return list_years
+    query_dates = get_years_where(where_sql, temporal_resolution)
+    logging.debug(f"query_dates: {query_dates}")
+    return query_dates
 
 @nexgddp_endpoints.route('/query/<dataset_id>', methods=['POST'])
 @get_bbox_by_hash
@@ -186,15 +240,15 @@ def query(dataset_id, bbox):
         return error(status=400, detail=e.message)
     logging.debug("years: ")
     logging.debug(years)
-    if len(years) == 0:
-        domain = QueryService.get_domain(scenario, model)
-        logging.debug(f"domain: {domain}")
-        years = list(range(
-            int(dateutil.parser.parse(domain['year']['min'], fuzzy_with_tokens=True)[0].year),
-            int(dateutil.parser.parse(domain['year']['max'], fuzzy_with_tokens=True)[0].year + 1),
-            10 
-        )) if temporal_resolution == 'decadal' else ['1971', '2021', '2051']
-        logging.debug(f"years: {years}")
+    # if len(years) == 0:
+    #     domain = QueryService.get_domain(scenario, model)
+    #     logging.debug(f"domain: {domain}")
+    #     years = list(range(
+    #         int(dateutil.parser.parse(domain['year']['min'], fuzzy_with_tokens=True)[0].year),
+    #         int(dateutil.parser.parse(domain['year']['max'], fuzzy_with_tokens=True)[0].year + 1),
+    #         10 
+    #     )) if temporal_resolution == 'decadal' else ['1971', '2021', '2051']
+    #     logging.debug(f"years: {years}")
         # return error(status=400, detail='Period of time must be set')
 
     results = {}
@@ -203,7 +257,7 @@ def query(dataset_id, bbox):
             if element['argument'] not in fields:
                 raise InvalidField(message='Invalid Fields')
             elif element['function'] == 'temporal_series' and element['argument'] == 'year':
-                results[element['alias'] if element['alias'] else 'year'] = map(lambda x: datetime.datetime(parse_year(x), 1, 1).isoformat(), years)
+                results[element['alias'] if element['alias'] else 'year'] = years
             elif element['function'] == 'temporal_series' and element['argument'] == 'all':
                 query_results = QueryService.get_all_data(scenario, model, years, bbox)
                 return jsonify(data = query_results), 200
