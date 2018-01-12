@@ -91,8 +91,7 @@ def get_list_years(resolution):
             '2051-01-01T00:00:00.000Z',
             '2061-01-01T00:00:00.000Z',
             '2071-01-01T00:00:00.000Z',
-            '2081-01-01T00:00:00.000Z',
-            '2091-01-01T00:00:00.000Z'
+            '2081-01-01T00:00:00.000Z'
         ],
         'y': [ # 30_y - to fix
             '1971-01-01T00:00:00.000Z',
@@ -144,9 +143,25 @@ def get_years_where(where_sql, temporal_resolution):
     if where_sql["type"] == 'between':
         start_stop_years = sorted(list(map(lambda arg: arg['value'], where_sql['arguments'])))
         logging.debug(f"start_stop_years: {start_stop_years}")
-        parsed = sorted(list(map(lambda date: dateutil.parser.parse(str(date), fuzzy_with_tokens=True), start_stop_years)))
+        parsed = sorted(list(map(lambda date: dateutil.parser.parse(str(date), fuzzy=True, ignoretz = True, dayfirst=False, yearfirst = True).replace(tzinfo=None), start_stop_years)))
+        logging.debug(parsed[0].isoformat())
+        all_years = list(map(lambda date: dateutil.parser.parse(date, fuzzy=True).replace(tzinfo=None), get_list_years(temporal_resolution)))
+        final_years = list(map(
+            lambda date: date.isoformat(),
+            [date for date in all_years if date <= parsed[1] and date >= parsed[0]]
+        ))
+        
         logging.debug(f"parsed: {parsed}")
-    return final_dates
+        logging.debug(f"all_years: {all_years}")
+        logging.debug(f"final_years: {final_years}")
+
+        if final_years == []:
+            raise PeriodNotValid("Supplied dates are invalid")
+
+    elif where_sql["type"] == "operator" and where_sql["value"] == '=':
+        current_year = where_sql['right']['value'].strip("'")
+        final_years = [current_year, current_year]
+    return final_years
 
 def get_years(json_sql, temporal_resolution):
     list_years = get_list_years(temporal_resolution)
