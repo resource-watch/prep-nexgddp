@@ -5,6 +5,7 @@ import json
 import logging
 
 from flask import Flask
+from flask_cache import Cache
 from nexgddp.config import SETTINGS
 from nexgddp.routes.api import error
 from nexgddp.routes.api.v1 import nexgddp_endpoints
@@ -19,6 +20,8 @@ logging.basicConfig(
 
 # Flask App
 app = Flask(__name__)
+
+cache = Cache(app, config={'CACHE_TYPE': 'simple'})
 
 # Routing
 app.register_blueprint(nexgddp_endpoints, url_prefix='/api/v1/nexgddp')

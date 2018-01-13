@@ -1,7 +1,8 @@
 """API ROUTER"""
 import logging
 import os
-from flask import jsonify, request, send_from_directory, Blueprint, Response
+from flask import Flask, jsonify, request, send_from_directory, Blueprint, Response
+from flask_cache import Cache
 from nexgddp.routes.api import error
 from nexgddp.services.query_service import QueryService
 from nexgddp.services.xml_service import XMLService
@@ -19,6 +20,9 @@ import dateutil.parser
 
 nexgddp_endpoints = Blueprint('nexgddp_endpoints', __name__)
 
+# mmm
+app = Flask(__name__)
+cache = Cache(app,config={'CACHE_TYPE': 'simple'})
 
 def callback_to_dataset(body):
     config = {
@@ -175,9 +179,20 @@ def get_years(json_sql, temporal_resolution):
     logging.debug(f"query_dates: {query_dates}")
     return query_dates
 
+def make_cache_key(*args, **kwargs):
+    logging.debug("Making cache key")
+    # path = request.path
+    sql = str(hash(frozenset(request.args.get('sql', None) or request.get_json().get('sql', None))))
+    logging.debug(sql)
+    args = str(hash(frozenset(request.args.items())))
+    cache_key = (sql + args).encode('utf-8')
+    logging.debug(f"cache_key: {cache_key}")
+    return cache_key
+
 @nexgddp_endpoints.route('/query/<dataset_id>', methods=['POST'])
 @get_bbox_by_hash
 @get_latlon
+@cache.cached(timeout=0, key_prefix=make_cache_key)
 def query(dataset_id, bbox):
     """NEXGDDP QUERY ENDPOINT"""
     logging.info('[ROUTER] Doing Query of dataset '+dataset_id)
