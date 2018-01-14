@@ -51,3 +51,6 @@ class LayerNotFound(Error):
 
 class DatasetNotFound(Error):
     pass
+
+class RasdamanError(Error):
+    pass

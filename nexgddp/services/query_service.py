@@ -7,7 +7,8 @@ import tempfile
 import datetime
 import dateutil.parser
 from requests import Request, Session
-from nexgddp.errors import SqlFormatError, PeriodNotValid, TableNameNotValid, GeostoreNeeded
+from requests.exceptions import ConnectTimeout
+from nexgddp.errors import SqlFormatError, PeriodNotValid, TableNameNotValid, GeostoreNeeded, RasdamanError
 from nexgddp.helpers.gdal_helper import GdalHelper
 from nexgddp.helpers.coloring_helper import ColoringHelper
 from nexgddp.services.xml_service import XMLService
@@ -166,7 +167,7 @@ class QueryService(object):
         )
         session = Session()
         prepped = session.prepare_request(request)
-        response = session.send(prepped)
+        response = session.send(prepped, timeout = 120)
         if response.status_code == 404:
             raise PeriodNotValid('Period Not Valid')
 
@@ -197,7 +198,7 @@ class QueryService(object):
         )
         session = Session()
         prepped = session.prepare_request(request)
-        response = session.send(prepped)
+        response = session.send(prepped, timeout = 120)
         return response.text
         
     @staticmethod
@@ -246,7 +247,7 @@ class QueryService(object):
         )
         session = Session()
         prepped = session.prepare_request(request)
-        response = session.send(prepped)
+        response = session.send(prepped, timeout = 120)
         if response.status_code == 404:
             raise PeriodNotValid('Data not found')
         with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as f:
@@ -333,7 +334,10 @@ class QueryService(object):
         )
         session = Session()
         prepped = session.prepare_request(request)
-        response = session.send(prepped)
+        try:
+            response = session.send(prepped, timeout = 15)
+        except ConnectTimeout:
+            raise RasdamanError('Rasdaman not reachable')
         if response.status_code == 404:
             raise TableNameNotValid('Table Name Not Valid')
         output = response.text

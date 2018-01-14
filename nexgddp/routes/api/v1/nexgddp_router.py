@@ -1,5 +1,6 @@
 """API ROUTER"""
 import logging
+import pickle
 import os
 from flask import Flask, jsonify, request, send_from_directory, Blueprint, Response
 from flask_cache import Cache
@@ -17,12 +18,18 @@ from nexgddp.helpers.coloring_helper import ColoringHelper
 from CTRegisterMicroserviceFlask import request_to_microservice
 import datetime
 import dateutil.parser
+from nexgddp.config import SETTINGS
 
 nexgddp_endpoints = Blueprint('nexgddp_endpoints', __name__)
 
 # mmm
 app = Flask(__name__)
-cache = Cache(app,config={'CACHE_TYPE': 'simple'})
+cache = Cache(app,config={
+    'CACHE_TYPE': 'redis',
+    'CACHE_KEY_PREFIX': 'nexgddp_queries', 
+    'CACHE_REDIS_HOST': SETTINGS.get('redis').get('url').split(':')[0]
+    
+})
 
 def callback_to_dataset(body):
     config = {
@@ -61,7 +68,6 @@ def get_sql_select(json_sql):
         select_functions = list(map(is_function, select_sql))
         select_literals  = list(map(is_literal,  select_sql))
         select = list(filter(None, select_functions + select_literals))
-
     # Reductions and temporal series have different cardinality - can't be both at the same time
     if not all(val is None for val in select_functions) and not all(val is None for val in select_literals):
         logging.error("Provided functions and literals at the same time")
@@ -155,9 +161,6 @@ def get_years_where(where_sql, temporal_resolution):
             [date for date in all_years if date <= parsed[1] and date >= parsed[0]]
         ))
         
-        logging.debug(f"parsed: {parsed}")
-        logging.debug(f"all_years: {all_years}")
-        logging.debug(f"final_years: {final_years}")
 
         if final_years == []:
             raise PeriodNotValid("Supplied dates are invalid")
@@ -182,17 +185,41 @@ def get_years(json_sql, temporal_resolution):
 def make_cache_key(*args, **kwargs):
     logging.debug("Making cache key")
     # path = request.path
+    logging.debug(request.args.get('sql', None) or request.get_json().get('sql', None))
     sql = str(hash(frozenset(request.args.get('sql', None) or request.get_json().get('sql', None))))
     logging.debug(sql)
     args = str(hash(frozenset(request.args.items())))
-    cache_key = (sql + args).encode('utf-8')
+    cache_key = str((sql + args).encode('utf-8'))
     logging.debug(f"cache_key: {cache_key}")
     return cache_key
+
+def unless_cache_query(*args, **kwargs):
+    logging.debug("Checking if previous query failed")
+    cache_key = make_cache_key()
+    logging.debug(f"cache_key: {cache_key}")
+    #try:
+    res = cache.get(cache_key)
+    logging.debug(res)
+    if res is None:
+        status_code = None
+    else:
+        status_code = list(res)[-1]
+
+    logging.debug(status_code)
+    if status_code is None:
+        logging.debug("Query not present")
+        return False
+    elif status_code != 200:
+        logging.debug("Query failed")
+        return True
+    else:
+        logging.debug("Query succeeded")
+        return False
 
 @nexgddp_endpoints.route('/query/<dataset_id>', methods=['POST'])
 @get_bbox_by_hash
 @get_latlon
-@cache.cached(timeout=0, key_prefix=make_cache_key)
+@cache.cached(timeout=0, key_prefix=make_cache_key, unless=unless_cache_query)
 def query(dataset_id, bbox):
     """NEXGDDP QUERY ENDPOINT"""
     logging.info('[ROUTER] Doing Query of dataset '+dataset_id)
@@ -225,8 +252,11 @@ def query(dataset_id, bbox):
 
 
     # Fields
-    fields_xml = QueryService.get_rasdaman_fields(scenario, model)
-    fields = XMLService.get_fields(fields_xml)
+    try:
+        fields_xml = QueryService.get_rasdaman_fields(scenario, model)
+        fields = XMLService.get_fields(fields_xml)
+    except TableNameNotValid as e:
+        return error(status=404, detail='Table name not valid')
     fields.update({'all': {'type': 'array'}})
     
     # Prior to validating dates, the [max|min](year) case has to be dealt with:
