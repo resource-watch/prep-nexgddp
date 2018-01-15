@@ -19,6 +19,7 @@ from CTRegisterMicroserviceFlask import request_to_microservice
 import datetime
 import dateutil.parser
 from nexgddp.config import SETTINGS
+import base64
 
 nexgddp_endpoints = Blueprint('nexgddp_endpoints', __name__)
 
@@ -185,11 +186,26 @@ def get_years(json_sql, temporal_resolution):
 def make_cache_key(*args, **kwargs):
     logging.debug("Making cache key")
     # path = request.path
-    logging.debug(request.args.get('sql', None) or request.get_json().get('sql', None))
-    sql = str(hash(frozenset(request.args.get('sql', None) or request.get_json().get('sql', None))))
-    logging.debug(sql)
-    args = str(hash(frozenset(request.args.items())))
-    cache_key = str((sql + args).encode('utf-8'))
+    sql = request.args.get('sql', None) or request.get_json().get('sql', None)
+    logging.debug(f"Original sql statement: {sql}")
+    converted_sql = base64.b64encode(str.encode(str(sql)))
+    logging.debug(converted_sql)
+    args_items = dict(request.args.items())
+    try:
+        del args_items["loggedUser"]
+    except KeyError as e:
+        pass
+
+    try:
+        del args_items["sql"]
+    except KeyError as e:
+        pass
+
+    args = str.encode(str(sorted(list(args_items))))
+    converted_args =  base64.b64encode(args)
+    logging.debug(f"args: {args}")
+    logging.debug(f"converted_args_ {converted_args}")
+    cache_key = str(converted_sql) + str(converted_args)
     logging.debug(f"cache_key: {cache_key}")
     return cache_key
 
@@ -199,7 +215,7 @@ def unless_cache_query(*args, **kwargs):
     logging.debug(f"cache_key: {cache_key}")
     #try:
     res = cache.get(cache_key)
-    logging.debug(res)
+    logging.debug(f"res: {res}")
     if res is None:
         status_code = None
     else:
@@ -379,9 +395,9 @@ def register_dataset():
 
 
 @nexgddp_endpoints.route('/layer/<layer>/tile/nexgddp/<int:z>/<int:x>/<int:y>', methods=['GET'])
+@get_layer
 @get_year
 @tile_exists
-@get_layer
 @get_tile_attrs
 def get_tile(x, y, z, model, scenario, year, style, indicator, layer, compare_year = None, dset_b = None):
     logging.info(f'Getting tile for {x} {y} {z}')

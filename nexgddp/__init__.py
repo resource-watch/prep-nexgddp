@@ -21,8 +21,6 @@ logging.basicConfig(
 # Flask App
 app = Flask(__name__)
 
-cache = Cache(app, config={'CACHE_TYPE': 'simple'})
-
 # Routing
 app.register_blueprint(nexgddp_endpoints, url_prefix='/api/v1/nexgddp')
 

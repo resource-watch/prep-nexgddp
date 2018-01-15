@@ -70,6 +70,7 @@ def get_tile_attrs(func):
         
         logging.debug('Obtaining style')
         layer_style = layer_config.get('colorRamp')
+        logging.debug(layer_style)
         kwargs["style"] = layer_style
         
         logging.debug('Obtaining year')
@@ -160,7 +161,7 @@ def get_layer(func):
         try:
             layer_object = LayerService.get(layer)
         except LayerNotFound as e:
-            return error(status=400, detail='Layer not found')
+            return error(status=404, detail='Layer not found')
         logging.debug(f'layer_object: {layer_object}')
         kwargs["layer_object"] = layer_object
         return func(*args, **kwargs)
