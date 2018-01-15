@@ -167,7 +167,7 @@ class QueryService(object):
         )
         session = Session()
         prepped = session.prepare_request(request)
-        response = session.send(prepped, timeout = 120)
+        response = session.send(prepped)
         if response.status_code == 404:
             raise PeriodNotValid('Period Not Valid')
 
@@ -198,7 +198,7 @@ class QueryService(object):
         )
         session = Session()
         prepped = session.prepare_request(request)
-        response = session.send(prepped, timeout = 120)
+        response = session.send(prepped)
         return response.text
         
     @staticmethod
@@ -247,7 +247,7 @@ class QueryService(object):
         )
         session = Session()
         prepped = session.prepare_request(request)
-        response = session.send(prepped, timeout = 120)
+        response = session.send(prepped)
         if response.status_code == 404:
             raise PeriodNotValid('Data not found')
         with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as f:
