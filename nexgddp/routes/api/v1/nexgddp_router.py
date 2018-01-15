@@ -2,8 +2,9 @@
 import logging
 import pickle
 import os
-from flask import Flask, jsonify, request, send_from_directory, Blueprint, Response
+from flask import Flask, jsonify, request, send_from_directory, Blueprint, Response, current_app
 from flask_cache import Cache
+#from nexgddp import cache
 from nexgddp.routes.api import error
 from nexgddp.services.query_service import QueryService
 from nexgddp.services.xml_service import XMLService
@@ -20,16 +21,22 @@ import datetime
 import dateutil.parser
 from nexgddp.config import SETTINGS
 import base64
+from urllib import parse
 
 nexgddp_endpoints = Blueprint('nexgddp_endpoints', __name__)
 
+
+
 # mmm
 app = Flask(__name__)
-cache = Cache(app,config={
+logging.debug(app)
+
+cache = Cache(app, config={
     'CACHE_TYPE': 'redis',
-    'CACHE_KEY_PREFIX': 'nexgddp_queries', 
-    'CACHE_REDIS_HOST': SETTINGS.get('redis').get('url').split(':')[0]
+    'CACHE_KEY_PREFIX': 'nexgddp_queries',
+    'CACHE_REDIS_URL': SETTINGS.get('redis').get('url')
     
+
 })
 
 def callback_to_dataset(body):
