@@ -184,7 +184,7 @@ def get_years(json_sql, temporal_resolution):
     return query_dates
 
 def make_cache_key(*args, **kwargs):
-    logging.debug("Making cache key")
+    logging.info("Making cache key")
     # path = request.path
     sql = request.args.get('sql', None) or request.get_json().get('sql', None)
     logging.debug(f"Original sql statement: {sql}")
@@ -210,7 +210,7 @@ def make_cache_key(*args, **kwargs):
     return cache_key
 
 def unless_cache_query(*args, **kwargs):
-    logging.debug("Checking if previous query failed")
+    logging.info("Checking if previous query failed")
     cache_key = make_cache_key()
     logging.debug(f"cache_key: {cache_key}")
     #try:
@@ -265,8 +265,6 @@ def query(dataset_id, bbox):
         logging.debug(select)
     except Exception as e:
         return error(status=400, detail='Invalid Select')
-
-
     # Fields
     try:
         fields_xml = QueryService.get_rasdaman_fields(scenario, model)
