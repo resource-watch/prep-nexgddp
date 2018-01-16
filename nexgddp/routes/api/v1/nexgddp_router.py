@@ -334,9 +334,9 @@ def register_dataset():
 
 
 @nexgddp_endpoints.route('/layer/<layer>/tile/nexgddp/<int:z>/<int:x>/<int:y>', methods=['GET'])
+@get_layer
 @get_year
 @tile_exists
-@get_layer
 @get_tile_attrs
 def get_tile(x, y, z, model, scenario, year, style, indicator, layer, compare_year = None, dset_b = None):
     logging.info(f'Getting tile for {x} {y} {z}')
