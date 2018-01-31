@@ -402,7 +402,7 @@ def register_dataset():
 @nexgddp_endpoints.route('/layer/<layer>/tile/nexgddp/<int:z>/<int:x>/<int:y>', methods=['GET'])
 @get_layer
 @get_year
-@tile_exists
+#@tile_exists
 @get_tile_attrs
 def get_tile(x, y, z, model, scenario, year, style, indicator, layer, compare_year = None, dset_b = None):
     logging.info(f'Getting tile for {x} {y} {z}')
@@ -419,17 +419,18 @@ def get_tile(x, y, z, model, scenario, year, style, indicator, layer, compare_ye
     else:
         rasterfile = QueryService.get_tile_query(bbox, year, model, scenario, indicator, bounds)
     colored_response = ColoringHelper.colorize(rasterfile, style = style)
+    if colored_response is not None:
+        # Saving file in cache
+        logging.debug(f'Requested path is: {request.path}')
 
-    # Saving file in cache
-    logging.debug(f'Requested path is: {request.path}')
-
-    # Uploading file to storage
-    # Beware of side effects!
-    # ColoringHelper.colorize stores the color-coded file in the same input file
-    # Uploading file to storage. 
-    StorageService.upload_file(rasterfile, layer, str(z), str(x), str(y), year, compare_year, dset_b)
-    
-    return colored_response, 200
+        # Uploading file to storage
+        # Beware of side effects!
+        # ColoringHelper.colorize stores the color-coded file in the same input file
+        # Uploading file to storage. 
+        #StorageService.upload_file(rasterfile, layer, str(z), str(x), str(y), year, compare_year, dset_b)
+        return colored_response, 200
+    else:
+        return "No tile data could be obtained from database.", 400
 
 @nexgddp_endpoints.route('/<layer>/expire-cache', methods=['DELETE'])
 @is_microservice
