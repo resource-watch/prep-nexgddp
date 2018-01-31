@@ -51,14 +51,29 @@ class ColoringHelper(object):
     def colorize(input_filename, style):
         logging.debug(f"[QueryService] Coloring raster {input_filename}")
         in_matrix = None
+
+        image_with_alpha = cv2.imread(input_filename, cv2.IMREAD_UNCHANGED);
+        mask = np.array(image_with_alpha, copy = True).astype(float)
+        mask[mask > 0] = 1.0
+        #logging.debug(mask)
         in_matrix = cv2.imread(input_filename, cv2.IMREAD_GRAYSCALE)
-        logging.debug(in_matrix)
+        #logging.debug(in_matrix)
         # color_lut = ColoringHelper.style_to_lut(style)
         color_lut = ColoringHelper.style_to_colormap(style)
         if in_matrix is not None:
-            logging.debug(in_matrix.shape)
+            #logging.debug(in_matrix.shape)
             im_color = color_lut(in_matrix)
-            cv2.imwrite(input_filename, im_color * 255)
+            im_color_split = cv2.split(im_color)
+            logging.debug("im_color_split:")
+            logging.debug(im_color_split)
+            logging.debug(len(im_color_split))
+            logging.debug(mask)
+            #logging.debug("Color image")
+            #logging.debug(im_color_split)
+            final_image = cv2.merge((im_color_split[0], im_color_split[1], im_color_split[2], mask))
+            logging.debug(final_image)
+            logging.debug(final_image.shape)
+            cv2.imwrite(input_filename, final_image * 255)
             f = open(input_filename, 'rb')
             return send_file(
                 io.BytesIO(f.read()),

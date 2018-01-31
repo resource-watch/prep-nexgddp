@@ -29,7 +29,7 @@ nexgddp_endpoints = Blueprint('nexgddp_endpoints', __name__)
 
 # mmm
 app = Flask(__name__)
-logging.debug(app)
+#logging.debug(app)
 
 cache = Cache(app, config={
     'CACHE_TYPE': 'redis',

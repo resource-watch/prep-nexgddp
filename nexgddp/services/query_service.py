@@ -225,7 +225,7 @@ class QueryService(object):
             ColoringHelper.normalize(
                 * bounds
             ),
-            ', {Lat: "CRS:1"(0:255), Long: "CRS:1"(0:255)}),  "PNG")]'
+            ', {Lat: "CRS:1"(0:255), Long: "CRS:1"(0:255)}),  "PNG", "nodata=0")]'
         ]
 
         envelope_list = [ '<?xml version="1.0" encoding="UTF-8" ?>',
