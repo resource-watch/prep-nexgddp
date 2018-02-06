@@ -22,6 +22,7 @@ import dateutil.parser
 from nexgddp.config import SETTINGS
 import base64
 from urllib import parse
+import json
 
 nexgddp_endpoints = Blueprint('nexgddp_endpoints', __name__)
 
@@ -29,7 +30,7 @@ nexgddp_endpoints = Blueprint('nexgddp_endpoints', __name__)
 
 # mmm
 app = Flask(__name__)
-logging.debug(app)
+#logging.debug(app)
 
 cache = Cache(app, config={
     'CACHE_TYPE': 'redis',
@@ -197,7 +198,8 @@ def make_cache_key(*args, **kwargs):
     logging.debug(f"Original sql statement: {sql}")
     converted_sql = base64.b64encode(str.encode(str(sql)))
     logging.debug(converted_sql)
-    args_items = dict(request.args.items())
+    args_items = dict(request.args)
+    logging.debug(f"args_items: {args_items}")
     try:
         del args_items["loggedUser"]
     except KeyError as e:
@@ -208,7 +210,7 @@ def make_cache_key(*args, **kwargs):
     except KeyError as e:
         pass
 
-    args = str.encode(str(sorted(list(args_items))))
+    args = str.encode(json.dumps(args_items, sort_keys = True))
     converted_args =  base64.b64encode(args)
     logging.debug(f"args: {args}")
     logging.debug(f"converted_args_ {converted_args}")
