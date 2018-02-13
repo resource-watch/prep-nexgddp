@@ -30,7 +30,8 @@ class StorageService(object):
         bucket = client.get_bucket('nexgddp-tiles')
         #blob = bucket.blob(layer+"/0/0/0/tile.png")
         list = bucket.list_blobs(prefix=layer)
-        for blob in list:
-            logging.debug(blob)
-            blob.delete()
+        bucket.delete_blobs(list)
+        # for blob in list:
+        #     logging.debug(blob)
+        #     blob.delete()
         logging.debug("Folder removed")

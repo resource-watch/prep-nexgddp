@@ -113,7 +113,7 @@
             "authenticated": true,
             "redirect": {
                 "method": "DELETE",
-                "path": "/api/v1/layer/:layer/expire-cache"
+                "path": "/api/v1/nexgddp/layer/:layer/expire-cache"
             },
             "filters": [
                 {
@@ -126,7 +126,9 @@
                     "compare": {
                         "data": {
                             "attributes": {
-                                "provider": "nexgddp"
+				"layerConfig": {
+                                    "type": "nexgddp"
+				}
                             }
                         }
                     }
