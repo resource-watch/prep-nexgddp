@@ -192,7 +192,7 @@ def get_years(json_sql, temporal_resolution):
     return query_dates
 
 def make_cache_key(*args, **kwargs):
-    logging.info("Making cache key")
+    logging.debug("Making cache key")
     # path = request.path
     sql = request.args.get('sql', None) or request.get_json().get('sql', None)
     logging.debug(f"Original sql statement: {sql}")
@@ -406,8 +406,8 @@ def register_dataset():
 @get_year
 @tile_exists
 @get_tile_attrs
-def get_tile(x, y, z, model, scenario, year, style, indicator, layer, compare_year = None, dset_b = None):
-    logging.info(f'Getting tile for {x} {y} {z}')
+def get_tile(x, y, z, model, scenario, year, style, indicator, layer, compare_year = None, dset_b = None, no_data = None):
+    #logging.info(f'Getting tile for {x} {y} {z}')
     logging.debug(compare_year)
     bbox = TileService.get_bbox(z, x, y)
     logging.debug(f"bbox: {bbox}")
@@ -420,7 +420,14 @@ def get_tile(x, y, z, model, scenario, year, style, indicator, layer, compare_ye
         rasterfile = QueryService.get_tile_diff_query(bbox, year, model, scenario, indicator, bounds, compare_year, dset_b)
     else:
         rasterfile = QueryService.get_tile_query(bbox, year, model, scenario, indicator, bounds)
+
     colored_response = ColoringHelper.colorize(rasterfile, style = style)
+
+    if no_data is not None:
+        logging.debug("Creating mask")
+        maskfile = QueryService.get_tile_mask_query(bbox, year, model, scenario, indicator)
+    else:
+        logging.debug("No nodata values")
 
     # Saving file in cache
     logging.debug(f'Requested path is: {request.path}')
@@ -444,7 +451,7 @@ def expire_cache(layer):
 @nexgddp_endpoints.route('/diff', methods=['POST'])
 @get_diff_attrs
 def diff(dset_a, date_a, date_b, lat, lon, varnames, dset_b = None):
-    logging.info('[NEXGDDP-ROUTER] Calculating diff')
+    logging.debug('[NEXGDDP-ROUTER] Calculating diff')
     diff_value = DiffService.get_diff_value(dset_a, date_a, date_b, lat, lon, varnames, dset_b)
     # diff_timestep = DiffService.get_timestep(date_a, date_b)
     return jsonify({"value": diff_value}), 200

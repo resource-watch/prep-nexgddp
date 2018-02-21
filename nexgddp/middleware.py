@@ -70,8 +70,13 @@ def get_tile_attrs(func):
         
         logging.debug('Obtaining style')
         layer_style = layer_config.get('colorRamp')
+        no_data = layer_config.get('noData')
+        
         logging.debug(layer_style)
         kwargs["style"] = layer_style
+
+        logging.debug(no_data)
+        kwargs["no_data"] = no_data
         
         logging.debug('Obtaining year')
         # year = layer_config.get('year')

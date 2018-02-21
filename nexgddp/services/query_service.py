@@ -259,6 +259,49 @@ class QueryService(object):
             return raster_filename
 
     @staticmethod
+    def get_tile_mask_query(bbox, year, model, scenario, indicator):
+        logging.info('[QueryService] Forming rasdaman query')
+        coverage = f'{scenario}_{model}_processed'
+        logging.debug(f'coverage: {coverage}')
+
+        bounds_expr = f"[ansi(\"{str(year)}\"), Lat({bbox['lat'][0]}:{bbox['lat'][1]}), Long({bbox['lon'][0]}:{bbox['lon'][1]})]"
+        logging.debug(f'bounds_expr: {bounds_expr}')
+        query_str = f'for cov in ({coverage}) return encode(scale(((cov.{indicator})[ansi("2021"), Long(-84.375:-78.75), Lat(27.059125784374068:31.95216223802497)] = -1) * 255, {{Lat: "CRS:1"(0:255), Long: "CRS:1"(0:255)}}),"PNG")'
+        
+
+        envelope_list = [ '<?xml version="1.0" encoding="UTF-8" ?>',
+                          '<ProcessCoveragesRequest xmlns="http://www.opengis.net/wcps/1.0" service="WCPS" version="1.0.0">',
+                          '<query><abstractSyntax>',
+                          query_str,
+                          '</abstractSyntax></query>',
+                          '</ProcessCoveragesRequest>'
+        ]
+
+
+        payload = ''.join(envelope_list)
+        logging.debug(f"payload: {payload}")
+        headers = {'Content-Type': 'application/xml'}
+        request = Request(
+            method='POST',
+            url=RASDAMAN_URL,
+            data=payload,
+            headers=headers
+        )
+        session = Session()
+        prepped = session.prepare_request(request)
+        response = session.send(prepped)
+        if response.status_code == 404:
+            raise PeriodNotValid('Data not found')
+        with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as f:
+            for chunk in response.iter_content(chunk_size=1024):
+                f.write(chunk)
+            raster_filename = f.name
+            logging.debug(f"[QueryService] Temporary raster filename: {raster_filename}")
+            f.close()
+            return raster_filename
+
+        
+    @staticmethod
     def get_tile_diff_query(bbox, year, model, scenario, indicator, bounds, year_b, dset_b):
         logging.info('[QueryService] Forming rasdaman query')
         coverage_a = f'{scenario}_{model}_processed'
