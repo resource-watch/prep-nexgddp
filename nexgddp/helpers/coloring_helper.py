@@ -49,12 +49,12 @@ class ColoringHelper(object):
 
     @staticmethod
     def colorize(input_filename, style):
-        logging.debug(f"[QueryService] Coloring raster {input_filename}")
-        in_matrix = cv2.imread(input_filename, cv2.IMREAD_GRAYSCALE)
+        logging.debug(f"[ColoringHelper] Coloring raster {input_filename}")
+        in_matrix = cv2.imread(input_filename)
         logging.debug(in_matrix)
         # color_lut = ColoringHelper.style_to_lut(style)
         color_lut = ColoringHelper.style_to_colormap(style)
-        logging.debug(in_matrix.shape)
+        #logging.debug(in_matrix.shape)
         im_color = color_lut(in_matrix)
         cv2.imwrite(input_filename, im_color * 255)
         f = open(input_filename, 'rb')
@@ -63,3 +63,8 @@ class ColoringHelper(object):
              attachment_filename='tile.png',
              mimetype='image/png'
         )
+
+    @staticmethod
+    def blend_alpha(output_filename, mask_filename):
+        logging.debug(f"[ColoringHelper] Blending alpha")
+        

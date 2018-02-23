@@ -2,7 +2,7 @@
 import logging
 import pickle
 import os
-from flask import Flask, jsonify, request, send_from_directory, Blueprint, Response, current_app
+from flask import Flask, jsonify, request, send_from_directory, Blueprint, Response, current_app, send_file
 from flask_cache import Cache
 #from nexgddp import cache
 from nexgddp.routes.api import error
@@ -23,6 +23,7 @@ from nexgddp.config import SETTINGS
 import base64
 from urllib import parse
 import json
+import io
 
 nexgddp_endpoints = Blueprint('nexgddp_endpoints', __name__)
 
@@ -170,7 +171,6 @@ def get_years_where(where_sql, temporal_resolution):
             [date for date in all_years if date <= parsed[1] and date >= parsed[0]]
         ))
         
-
         if final_years == []:
             raise PeriodNotValid("Supplied dates are invalid")
 
@@ -404,7 +404,7 @@ def register_dataset():
 @nexgddp_endpoints.route('/layer/<layer>/tile/nexgddp/<int:z>/<int:x>/<int:y>', methods=['GET'])
 @get_layer
 @get_year
-@tile_exists
+#@tile_exists
 @get_tile_attrs
 def get_tile(x, y, z, model, scenario, year, style, indicator, layer, compare_year = None, dset_b = None, no_data = None):
     #logging.info(f'Getting tile for {x} {y} {z}')
@@ -425,7 +425,10 @@ def get_tile(x, y, z, model, scenario, year, style, indicator, layer, compare_ye
 
     if no_data is not None:
         logging.debug("Creating mask")
-        maskfile = QueryService.get_tile_mask_query(bbox, year, model, scenario, indicator)
+        maskfile = QueryService.get_tile_mask_query(bbox, year, model, scenario, indicator, no_data)
+        ColoringHelper.blend_alpha(colored_response, maskfile)
+        os.remove(maskfile)
+        
     else:
         logging.debug("No nodata values")
 
@@ -437,8 +440,15 @@ def get_tile(x, y, z, model, scenario, year, style, indicator, layer, compare_ye
     # ColoringHelper.colorize stores the color-coded file in the same input file
     # Uploading file to storage. 
     StorageService.upload_file(rasterfile, layer, str(z), str(x), str(y), year, compare_year, dset_b)
-    
+
+    # mask_response = send_file(
+    #     io.BytesIO(open(maskfile, 'rb').read()),
+    #     attachment_filename = 'tile.png',
+    #     mimetype = 'image/png'
+    # )
+
     return colored_response, 200
+    #return mask_response, 200
 
 @nexgddp_endpoints.route('/layer/<layer>/expire-cache', methods=['DELETE'])
 @is_microservice

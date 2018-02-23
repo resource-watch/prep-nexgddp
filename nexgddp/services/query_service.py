@@ -259,14 +259,14 @@ class QueryService(object):
             return raster_filename
 
     @staticmethod
-    def get_tile_mask_query(bbox, year, model, scenario, indicator):
+    def get_tile_mask_query(bbox, year, model, scenario, indicator, no_data):
         logging.info('[QueryService] Forming rasdaman query')
         coverage = f'{scenario}_{model}_processed'
         logging.debug(f'coverage: {coverage}')
 
         bounds_expr = f"[ansi(\"{str(year)}\"), Lat({bbox['lat'][0]}:{bbox['lat'][1]}), Long({bbox['lon'][0]}:{bbox['lon'][1]})]"
         logging.debug(f'bounds_expr: {bounds_expr}')
-        query_str = f'for cov in ({coverage}) return encode(scale(((cov.{indicator})[ansi("2021"), Long(-84.375:-78.75), Lat(27.059125784374068:31.95216223802497)] = -1) * 255, {{Lat: "CRS:1"(0:255), Long: "CRS:1"(0:255)}}),"PNG")'
+        query_str = f'for cov in ({coverage}) return encode(scale(((cov.{indicator}){bounds_expr} = {str(no_data)} ) * 255, {{Lat: "CRS:1"(0:255), Long: "CRS:1"(0:255)}}),"PNG")'
         
 
         envelope_list = [ '<?xml version="1.0" encoding="UTF-8" ?>',
@@ -299,8 +299,7 @@ class QueryService(object):
             logging.debug(f"[QueryService] Temporary raster filename: {raster_filename}")
             f.close()
             return raster_filename
-
-        
+       
     @staticmethod
     def get_tile_diff_query(bbox, year, model, scenario, indicator, bounds, year_b, dset_b):
         logging.info('[QueryService] Forming rasdaman query')
