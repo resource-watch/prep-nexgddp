@@ -54,3 +54,6 @@ class DatasetNotFound(Error):
 
 class RasdamanError(Error):
     pass
+
+class CoverageNotFound(Error):
+    pass

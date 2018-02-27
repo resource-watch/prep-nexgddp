@@ -13,7 +13,7 @@ from nexgddp.services.storage_service import StorageService
 from nexgddp.services.redis_service import RedisService
 from nexgddp.services.diff_service import DiffService
 from nexgddp.helpers.coloring_helper import ColoringHelper
-from nexgddp.errors import SqlFormatError, PeriodNotValid, TableNameNotValid, GeostoreNeeded, XMLParserError, InvalidField, CoordinatesNeeded, LayerNotFound
+from nexgddp.errors import SqlFormatError, PeriodNotValid, TableNameNotValid, GeostoreNeeded, XMLParserError, InvalidField, CoordinatesNeeded, LayerNotFound, CoverageNotFound
 from nexgddp.middleware import get_bbox_by_hash, get_latlon, get_tile_attrs, get_layer, get_year, tile_exists, is_microservice, get_diff_attrs
 from nexgddp.helpers.coloring_helper import ColoringHelper
 from CTRegisterMicroserviceFlask import request_to_microservice
@@ -31,14 +31,11 @@ nexgddp_endpoints = Blueprint('nexgddp_endpoints', __name__)
 
 # mmm
 app = Flask(__name__)
-#logging.debug(app)
 
 cache = Cache(app, config={
     'CACHE_TYPE': 'redis',
     'CACHE_KEY_PREFIX': 'nexgddp_queries',
     'CACHE_REDIS_URL': SETTINGS.get('redis').get('url')
-    
-
 })
 
 def callback_to_dataset(body):
@@ -66,15 +63,13 @@ def get_sql_select(json_sql):
                     'argument': clause.get('arguments')[0].get('value'),
                     'alias': clause.get('alias', None)
                 }
-
         def is_literal(clause):
             if clause.get('type') == 'literal':
                 return {
                     'function': 'temporal_series',
                     'argument': clause.get('value'),
                     'alias': clause.get('alias', None)
-                }
-        
+                }        
         select_functions = list(map(is_function, select_sql))
         select_literals  = list(map(is_literal,  select_sql))
         select = list(filter(None, select_functions + select_literals))
@@ -169,11 +164,9 @@ def get_years_where(where_sql, temporal_resolution):
         final_years = list(map(
             lambda date: date.isoformat(),
             [date for date in all_years if date <= parsed[1] and date >= parsed[0]]
-        ))
-        
+        ))        
         if final_years == []:
             raise PeriodNotValid("Supplied dates are invalid")
-
     elif where_sql["type"] == "operator" and where_sql["value"] == '=':
         current_year = where_sql['right']['value'].strip("'")
         final_years = [current_year, current_year]
@@ -192,6 +185,7 @@ def get_years(json_sql, temporal_resolution):
     return query_dates
 
 def make_cache_key(*args, **kwargs):
+    # This one is for _queries_ - not layers
     logging.debug("Making cache key")
     # path = request.path
     sql = request.args.get('sql', None) or request.get_json().get('sql', None)
@@ -204,12 +198,10 @@ def make_cache_key(*args, **kwargs):
         del args_items["loggedUser"]
     except KeyError as e:
         pass
-
     try:
         del args_items["sql"]
     except KeyError as e:
         pass
-
     args = str.encode(json.dumps(args_items, sort_keys = True))
     converted_args =  base64.b64encode(args)
     logging.debug(f"args: {args}")
@@ -229,7 +221,6 @@ def unless_cache_query(*args, **kwargs):
         status_code = None
     else:
         status_code = list(res)[-1]
-
     logging.debug(status_code)
     if status_code is None:
         logging.debug("Query not present")
@@ -247,8 +238,7 @@ def unless_cache_query(*args, **kwargs):
 @cache.cached(timeout=0, key_prefix=make_cache_key, unless=unless_cache_query)
 def query(dataset_id, bbox):
     """NEXGDDP QUERY ENDPOINT"""
-    logging.info('[ROUTER] Doing Query of dataset '+dataset_id)
-    
+    logging.info('[ROUTER] Doing Query of dataset '+dataset_id)    
     # Get and deserialize
     dataset = request.get_json().get('dataset', None).get('data', None)
     table_name = dataset.get('attributes').get('tableName')
@@ -258,7 +248,6 @@ def query(dataset_id, bbox):
     sql = request.args.get('sql', None) or request.get_json().get('sql', None)
     if not sql:
         return error(status=400, detail='sql must be provided')
-
     # convert
     try:
         _, json_sql = QueryService.convert(sql)
@@ -290,15 +279,13 @@ def query(dataset_id, bbox):
             return False
     # All statements in the select must have the prior form
     select_year = all(list(map(is_year, select)))
-
     if select_year == True:
         result = {}
         domain = QueryService.get_domain(scenario, model)
         logging.debug(f"domain: {domain}")
         for element in select:
             result[element['alias'] if element['alias'] else f"{element['function']}({element['argument']})"] = domain.get(element['argument']).get(element['function'])
-        return jsonify(data=[result]), 200
-    
+        return jsonify(data=[result]), 200    
     if not bbox:
         return error(status=400, detail='No coordinates provided. Include geostore or lat & lon')
     # Get years
@@ -404,7 +391,7 @@ def register_dataset():
 @nexgddp_endpoints.route('/layer/<layer>/tile/nexgddp/<int:z>/<int:x>/<int:y>', methods=['GET'])
 @get_layer
 @get_year
-#@tile_exists
+@tile_exists
 @get_tile_attrs
 def get_tile(x, y, z, model, scenario, year, style, indicator, layer, compare_year = None, dset_b = None, no_data = None):
     #logging.info(f'Getting tile for {x} {y} {z}')
@@ -421,33 +408,37 @@ def get_tile(x, y, z, model, scenario, year, style, indicator, layer, compare_ye
     else:
         rasterfile = QueryService.get_tile_query(bbox, year, model, scenario, indicator, bounds)
 
-    colored_response = ColoringHelper.colorize(rasterfile, style = style)
+    try:
+        colored_response = ColoringHelper.colorize(rasterfile, style = style)
+    except CoverageNotFound as e:
+        return error(status=404, detail=e.message)
+
+    logging.debug(f"colored_response: {colored_response}")
+    #logging.debug(f"colored_response.shape: {colored_response.shape}")
 
     if no_data is not None:
         logging.debug("Creating mask")
         maskfile = QueryService.get_tile_mask_query(bbox, year, model, scenario, indicator, no_data)
         ColoringHelper.blend_alpha(colored_response, maskfile)
         os.remove(maskfile)
-        
     else:
         logging.debug("No nodata values")
 
     # Saving file in cache
     logging.debug(f'Requested path is: {request.path}')
 
-    # Uploading file to storage
-    # Beware of side effects!
-    # ColoringHelper.colorize stores the color-coded file in the same input file
     # Uploading file to storage. 
-    StorageService.upload_file(rasterfile, layer, str(z), str(x), str(y), year, compare_year, dset_b)
+    StorageService.upload_file(colored_response, layer, str(z), str(x), str(y), year, compare_year, dset_b)
 
-    # mask_response = send_file(
-    #     io.BytesIO(open(maskfile, 'rb').read()),
-    #     attachment_filename = 'tile.png',
-    #     mimetype = 'image/png'
-    # )
+    tile_response = send_file(
+         io.BytesIO(open(colored_response, 'rb').read()),
+         attachment_filename = 'tile.png',
+         mimetype = 'image/png'
+    )
 
-    return colored_response, 200
+
+    # ºos.remove(colored_response)
+    return tile_response, 200
     #return mask_response, 200
 
 @nexgddp_endpoints.route('/layer/<layer>/expire-cache', methods=['DELETE'])

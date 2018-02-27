@@ -11,6 +11,8 @@ from flask import send_file
 from functools import reduce
 from matplotlib.colors import LinearSegmentedColormap
 import matplotlib.colors
+from nexgddp.errors import CoverageNotFound
+
 
 class ColoringHelper(object):
     @staticmethod
@@ -39,7 +41,6 @@ class ColoringHelper(object):
             lambda stop: float(1/(stop_range[1]-stop_range[0]) * (stop-stop_range[1]) + 1),
             stops
         ))
-
         norms[0] = 0.0 # Sometimes a *really* small float appears
         norms[-1] = 1.0
         logging.debug(f"norms: {norms}")
@@ -50,21 +51,27 @@ class ColoringHelper(object):
     @staticmethod
     def colorize(input_filename, style):
         logging.debug(f"[ColoringHelper] Coloring raster {input_filename}")
-        in_matrix = cv2.imread(input_filename)
-        logging.debug(in_matrix)
-        # color_lut = ColoringHelper.style_to_lut(style)
+        # It's important to set the correct flags to read the file,
+        # lest not have correct dimensionality later
+        in_matrix = cv2.imread(input_filename, cv2.IMREAD_GRAYSCALE)
         color_lut = ColoringHelper.style_to_colormap(style)
-        #logging.debug(in_matrix.shape)
-        im_color = color_lut(in_matrix)
-        cv2.imwrite(input_filename, im_color * 255)
-        f = open(input_filename, 'rb')
-        return send_file(
-             io.BytesIO(f.read()),
-             attachment_filename='tile.png',
-             mimetype='image/png'
-        )
+        if in_matrix is not None:
+            im_color = color_lut(in_matrix)
+            cv2.imwrite(input_filename, im_color * 255)
+            logging.debug(input_filename)
+        else:
+            raise CoverageNotFound("No data for the supplied coordinates")
+        return input_filename
 
     @staticmethod
     def blend_alpha(output_filename, mask_filename):
         logging.debug(f"[ColoringHelper] Blending alpha")
-        
+        output_raster = cv2.imread(output_filename, cv2.IMREAD_COLOR)
+        output_mask = cv2.imread(mask_filename, cv2.IMREAD_GRAYSCALE)
+        expanded_mask = np.expand_dims(output_mask, axis = -1)
+        logging.debug(expanded_mask.shape)
+        logging.debug(output_raster.shape)
+        final_result = np.concatenate((output_raster, 255 - expanded_mask), axis = -1)
+        cv2.imwrite(output_filename, final_result)
+        logging.debug(f"final_result.shape: {final_result.shape}")
+        return output_filename

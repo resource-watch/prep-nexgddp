@@ -24,7 +24,7 @@ develop:
   links:
     - redis
   extra_hosts:
-    - "mymachine:192.168.1.123"
+    - "mymachine:192.168.1.33"
 redis:
   image: redis
   restart: always

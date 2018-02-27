@@ -18,11 +18,12 @@ class StorageService(object):
 
         bucket = client.get_bucket('nexgddp-tiles')
         blob = bucket.blob(layer + '/' + z + '/' + x + '/' + y + '/' + str(year) + '.png')
+        logging.debug(f"blob: {blob}")
         with open(filename, 'rb') as tile_file:
             blob.upload_from_file(tile_file)
             blob.make_public()
             RedisService.set(request.path + '_' + str(year), blob.public_url)
-            os.remove(filename)
+            # os.remove(filename)
             return blob.public_url
 
     @staticmethod
