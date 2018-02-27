@@ -436,8 +436,7 @@ def get_tile(x, y, z, model, scenario, year, style, indicator, layer, compare_ye
          mimetype = 'image/png'
     )
 
-
-    # ºos.remove(colored_response)
+    os.remove(colored_response)
     return tile_response, 200
     #return mask_response, 200
 

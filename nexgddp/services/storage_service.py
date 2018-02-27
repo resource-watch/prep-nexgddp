@@ -12,13 +12,12 @@ class StorageService(object):
     def upload_file(filename, layer, z, x, y, year, compare_year, dset_b):
         
         if compare_year or dset_b:
-            os.remove(filename)
+            # os.remove(filename)
             return None
         logging.debug(f'filename is: {filename}')
 
         bucket = client.get_bucket('nexgddp-tiles')
         blob = bucket.blob(layer + '/' + z + '/' + x + '/' + y + '/' + str(year) + '.png')
-        logging.debug(f"blob: {blob}")
         with open(filename, 'rb') as tile_file:
             blob.upload_from_file(tile_file)
             blob.make_public()
