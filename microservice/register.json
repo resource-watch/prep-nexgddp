@@ -19,14 +19,22 @@
                     "params": {
                         "dataset": "dataset"
                     },
-                    "compare": {
+		    "condition": "OR",
+                    "compare": [{
                         "data": {
                             "attributes": {
                                 "provider": "nexgddp",
                                 "status": "saved"
                             }
                         }
-                    }
+                    },{
+                        "data": {
+                            "attributes": {
+                                "provider": "loca",
+                                "status": "saved"
+                            }
+                        }
+                    }]
                 }
             ]
         },
@@ -46,14 +54,22 @@
                     "params": {
                         "dataset": "dataset"
                     },
-                    "compare": {
+		    "condition": "OR",
+                    "compare": [{
                         "data": {
                             "attributes": {
                                 "provider": "nexgddp",
                                 "status": "saved"
                             }
                         }
-                    }
+                    },{
+                        "data": {
+                            "attributes": {
+                                "provider": "loca",
+                                "status": "saved"
+                            }
+                        }
+                    }]
                 }
             ]
         },
@@ -72,19 +88,35 @@
                     "params": {
                         "dataset": "dataset"
                     },
-                    "compare": {
+		    "condition": "OR",		    
+                    "compare": [{
                         "data": {
                             "attributes": {
                                 "provider": "nexgddp",
                                 "status": "saved"
                             }
                         }
-                    }
+                    },{
+                        "data": {
+                            "attributes": {
+                                "provider": "loca",
+                                "status": "saved"
+                            }
+                        }
+                    }]
                 }
             ]
         },
         {
             "path": "/v1/rest-datasets/nexgddp",
+            "method": "POST",
+            "redirect": {
+                "method": "POST",
+                "path": "/api/v1/nexgddp/rest-datasets/nexgddp"
+            }
+        },
+	{
+            "path": "/v1/rest-datasets/loca",
             "method": "POST",
             "redirect": {
                 "method": "POST",
@@ -99,8 +131,24 @@
                 "path": "/api/v1/nexgddp/diff"
             }
         },
+	{
+            "path": "/v1/loca/diff",
+            "method": "POST",
+            "redirect": {
+                "method": "POST",
+                "path": "/api/v1/nexgddp/diff"
+            }
+        },
         {
             "path": "/v1/layer/:layer/tile/nexgddp/:z/:x/:y",
+            "method": "GET",
+            "redirect": {
+                "method": "GET",
+                "path": "/api/v1/nexgddp/layer/:layer/tile/nexgddp/:z/:x/:y"
+            }
+        },
+        {
+            "path": "/v1/layer/:layer/tile/loca/:z/:x/:y",
             "method": "GET",
             "redirect": {
                 "method": "GET",
