@@ -23,9 +23,11 @@ class StorageService(object):
     @staticmethod
     def upload_file(filename, layer, z, x, y, year, compare_year, dset_b):
         cache_key = StorageService.make_tile_cache_key(layer, z, x, y, year, compare_year, dset_b)
-
         bucket = client.get_bucket('nexgddp-tiles')
         blob = bucket.blob(cache_key)
+
+        logging.debug(f"cache_key: {cache_key}")
+        logging.debug(f"blob.public_url: {blob.public_url}")
         with open(filename, 'rb') as tile_file:
             blob.upload_from_file(tile_file)
             blob.make_public()

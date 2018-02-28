@@ -109,7 +109,7 @@ def get_tile_attrs(func):
                 kwargs["dset_b"] = tablename_b
                 logging.debug(f"tablename_b: {tablename_b}")
             else:
-                kwargs["dset_b"] = None
+                kwargs["dset_b"] = '_'.join(dataset_object.get('tableName', None).split('/')) + '_processed'
         else:
             kwargs["compare_year"] = None
             kwargs["dset_b"] = None
