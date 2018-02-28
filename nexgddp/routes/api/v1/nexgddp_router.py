@@ -391,12 +391,12 @@ def register_dataset():
 @nexgddp_endpoints.route('/layer/<layer>/tile/nexgddp/<int:z>/<int:x>/<int:y>', methods=['GET'])
 @get_layer
 @get_year
-@tile_exists
 @get_tile_attrs
-def get_tile(x, y, z, model, scenario, year, style, indicator, layer, compare_year = None, dset_b = None, no_data = None):
-    #logging.info(f'Getting tile for {x} {y} {z}')
+@tile_exists
+def get_tile(z, x, y, model, scenario, year, style, indicator, layer, compare_year = None, dset_b = None, no_data = None):
+    logging.info(f'Getting tile for {z} {x} {y}')
     logging.debug(compare_year)
-    bbox = TileService.get_bbox(z, x, y)
+    bbox = TileService.get_bbox(x, y, z)
     logging.debug(f"bbox: {bbox}")
     bounds = ColoringHelper.get_data_bounds(style)
     logging.debug(bounds)

@@ -8,6 +8,7 @@ from nexgddp.services.geostore_service import GeostoreService
 from nexgddp.services.redis_service import RedisService
 from nexgddp.services.layer_service import LayerService
 from nexgddp.services.dataset_service import DatasetService
+from nexgddp.services.storage_service import StorageService
 from nexgddp.errors import GeostoreNotFound, InvalidCoordinates, LayerNotFound
 
 import logging
@@ -109,6 +110,9 @@ def get_tile_attrs(func):
                 logging.debug(f"tablename_b: {tablename_b}")
             else:
                 kwargs["dset_b"] = None
+        else:
+            kwargs["compare_year"] = None
+            kwargs["dset_b"] = None
         del kwargs["layer_object"]
         return func(*args, **kwargs)
     return wrapper
@@ -177,10 +181,20 @@ def tile_exists(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
         logging.info("[Middleware] Checking if tile exists in cache")
-        logging.debug(f'request.path: {request.path}')
-        request_id = request.path + '_' + str(kwargs['year'])
-        logging.debug(request_id)
-        url = RedisService.get(request_id)
+        logging.debug(f"request.path: {request.path}")
+        z, x, y = list(map(int, request.path.split('/')[-3:]))
+        cache_key = StorageService.make_tile_cache_key(
+            kwargs['layer'],
+            z, x, y,
+            kwargs['year'],
+            kwargs['compare_year'],
+            kwargs['dset_b']
+        )
+        logging.debug(f"cache_key: {cache_key}")
+        
+        # request_id = request.path + '_' + str(kwargs['year'])
+        # logging.debug(request_id)
+        url = RedisService.get(cache_key)
         logging.debug(f'url: {url}')
         if url is None:
             logging.debug("No tile found in cache")
