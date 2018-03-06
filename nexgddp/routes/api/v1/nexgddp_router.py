@@ -521,13 +521,94 @@ def getInfoIndicator(indicator):
             "id": "2051-01-01T00:00:00.000Z"
         }]
     }] 
-    return jsonify(body), 200
+    return jsonify(body), 200 
+
+@nexgddp_endpoints.route('/locainfo/<indicator>', methods=['GET'])
+def getLocaInfoIndicator(indicator):
+    logging.info('[NEXGDDP-ROUTER] Get info of indicator (LOCA)')
+    body = {}
+    body["scenarios"] = [{
+        "label": "Low Emissions",
+        "id": "rcp45"
+    }, {
+        "label": "High Emissions",
+        "id": "rcp85"
+    }]
+    body["temporalResolution"] = [{
+        "label": "Decadal",
+        "id": "decadal",
+        "periods": [{
+            "label": "1971-1980",
+            "id": "1971-01-01T00:00:00.000Z"
+        }, {
+            "label": "1981-1990",
+            "id": "1981-01-01T00:00:00.000Z"
+        }, {
+            "label": "1991-2000",
+            "id": "1991-01-01T00:00:00.000Z"
+        }, {
+            "label": "2001-2010",
+            "id": "2001-01-01T00:00:00.000Z"
+        }, {
+            "label": "2011-2020",
+            "id": "2011-01-01T00:00:00.000Z"
+        }, {
+            "label": "2021-2030",
+            "id": "2021-01-01T00:00:00.000Z"
+        }, {
+            "label": "2031-2040",
+            "id": "2031-01-01T00:00:00.000Z"
+        }, {
+            "label": "2041-2050",
+            "id": "2041-01-01T00:00:00.000Z"
+        }, {
+            "label": "2051-2060",
+            "id": "2051-01-01T00:00:00.000Z"
+        }, {
+            "label": "2061-2070",
+            "id": "2061-01-01T00:00:00.000Z"
+        }, {
+            "label": "2071-2080",
+            "id": "2071-01-01T00:00:00.000Z"
+        }, {
+            "label": "2081-2090",
+            "id": "2081-01-01T00:00:00.000Z"
+        }]        
+    }, {
+        "label": "30 years",
+        "id": "30_y",
+        "periods": [{
+            "label": "1971-2000",
+            "id": "1971-01-01T00:00:00.000Z"
+        }, {
+            "label": "2021-2050",
+            "id": "2021-01-01T00:00:00.000Z"
+        }, {
+            "label": "2051-2080",
+            "id": "2051-01-01T00:00:00.000Z"
+        }]
+    }] 
+    return jsonify(body), 200 
 
 @nexgddp_endpoints.route('/dataset/<indicator>/<scenario>/<temporal_res>', methods=['GET'])
 def getDataset(indicator, scenario, temporal_res):
     logging.info('[NEXGDDP-ROUTER] Get info of indicator')
     datasets = request_to_microservice({
         'uri': '/dataset?includes=layer&tableName='+ indicator + '/' + scenario + '_' + temporal_res + '&env=' + request.args.get("env", 'production'),
+        'method': 'GET'
+    })
+    if datasets.get('data') and len(datasets.get('data')) > 0:
+        return jsonify({"data": datasets.get('data')[0]}), 200
+    return jsonify({"errors": [{
+        "status": 404,
+        "detail": "Dataset doesn't exist"
+    }]}), 404
+
+@nexgddp_endpoints.route('/locadataset/<indicator>/<scenario>/<temporal_res>', methods=['GET'])
+def getLocaDataset(indicator, scenario, temporal_res):
+    logging.info('[NEXGDDP-ROUTER] Get info of indicator')
+    datasets = request_to_microservice({
+        'uri': '/dataset?includes=layer&tableName=loca_'+ indicator + '/' + scenario + '_' + temporal_res + '&env=' + request.args.get("env", 'production'),
         'method': 'GET'
     })
     if datasets.get('data') and len(datasets.get('data')) > 0:
