@@ -212,7 +212,7 @@ class QueryService(object):
             ') return encode(scale((((cov.',
             indicator,
             ')[ansi("',
-            year,
+            f'{year}-01-01',
             '"),Lat(',
             str(bbox['lat'][0]),
             ':',
@@ -264,7 +264,7 @@ class QueryService(object):
         coverage = f'{scenario}_{model}_processed'
         logging.debug(f'coverage: {coverage}')
 
-        bounds_expr = f"[ansi(\"{str(year)}\"), Lat({bbox['lat'][0]}:{bbox['lat'][1]}), Long({bbox['lon'][0]}:{bbox['lon'][1]})]"
+        bounds_expr = f"[ansi(\"{str(year)}-01-01\"), Lat({bbox['lat'][0]}:{bbox['lat'][1]}), Long({bbox['lon'][0]}:{bbox['lon'][1]})]"
         logging.debug(f'bounds_expr: {bounds_expr}')
         query_str = f'for cov in ({coverage}) return encode(scale(((cov.{indicator}){bounds_expr} = {str(no_data)} ) * 255, {{Lat: "CRS:1"(0:255), Long: "CRS:1"(0:255)}}),"PNG")'
         
@@ -316,9 +316,9 @@ class QueryService(object):
         bbox_expr = f" Lat({bbox['lat'][0]}:{bbox['lat'][1]}),Long({bbox['lon'][0]}:{bbox['lon'][1]})]"
         query = ''.join([
             f"for cov1 in ({dset_b}), cov2 in ({coverage_a}) return encode(scale(",
-            f"(((cov1.{indicator})[ansi(\"{year_b}\"),",
+            f"(((cov1.{indicator})[ansi(\"{year_b}-01-01\"),",
             bbox_expr,
-            f" - (cov2.{indicator})[ansi(\"{year}\"),",
+            f" - (cov2.{indicator})[ansi(\"{year}-01-01\"),",
             bbox_expr,
             f") {lower_bound_expr} ) * (255 / ({bounds_range} )),",
             "{Lat: \"CRS:1\"(0:255), Long: \"CRS:1\"(0:255)}),\"PNG\")]" # Not a f-expression
