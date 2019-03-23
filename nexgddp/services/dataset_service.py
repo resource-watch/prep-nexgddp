@@ -1,10 +1,9 @@
 """ Dataset service """
 
-import json
-
+from CTRegisterMicroserviceFlask import request_to_microservice
 
 from nexgddp.errors import DatasetNotFound
-from CTRegisterMicroserviceFlask import request_to_microservice
+
 
 class DatasetService(object):
 
@@ -19,7 +18,7 @@ class DatasetService(object):
     @staticmethod
     def get(dataset):
         config = {
-            'uri': '/dataset/'+dataset,
+            'uri': '/dataset/' + dataset,
             'method': 'GET'
         }
         return DatasetService.execute(config)
