@@ -1,4 +1,4 @@
-# Python Skeleton for Micorservices
+# Python Skeleton for Microservices
 
 ## Getting started
 
