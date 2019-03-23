@@ -1,7 +1,7 @@
 """GDAL Helper"""
 
-from osgeo import gdal, gdalnumeric
 import logging
+
 
 class GdalHelper(object):
     @staticmethod

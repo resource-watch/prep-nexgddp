@@ -1,25 +1,26 @@
 """QUERY SERVICE"""
 
-import json
-import os
 import logging
+import os
 import tempfile
-import datetime
+
 import dateutil.parser
+import dateutil.parser
+from CTRegisterMicroserviceFlask import request_to_microservice
+from nexgddp.helpers.coloring_helper import ColoringHelper
+from nexgddp.helpers.gdal_helper import GdalHelper
+from osgeo import gdal
 from requests import Request, Session
 from requests.exceptions import ConnectTimeout
+
 from nexgddp.errors import SqlFormatError, PeriodNotValid, TableNameNotValid, GeostoreNeeded, RasdamanError
-from nexgddp.helpers.gdal_helper import GdalHelper
-from nexgddp.helpers.coloring_helper import ColoringHelper
 from nexgddp.services.xml_service import XMLService
-from CTRegisterMicroserviceFlask import request_to_microservice
-import dateutil.parser
-from osgeo import gdal, gdalnumeric
 
 RASDAMAN_URL = os.getenv('RASDAMAN_URL')
 
 # Allows gdal to use exceptions
 gdal.UseExceptions()
+
 
 class QueryService(object):
     @staticmethod
@@ -98,7 +99,7 @@ class QueryService(object):
                 # Removing the raster
                 os.remove(os.path.join('/tmp', raster_filename))
         return map(float, processed_data)
-    
+
     @staticmethod
     def get_all_data(scenario, model, years, bbox):
         logging.info('[QueryService] Getting * data from rasdaman')
@@ -119,7 +120,7 @@ class QueryService(object):
                 processed_data = raw_data.replace('{', '').replace('}', '').split(',')
                 fields_xml = QueryService.get_rasdaman_fields(scenario, model)
                 fields = XMLService.get_fields(fields_xml)
-                fields_without_year = dict((i,fields[i]) for i in fields if i!='year')
+                fields_without_year = dict((i, fields[i]) for i in fields if i != 'year')
                 varnames = list()
                 for key in fields_without_year:
                     varnames.append(key)
@@ -133,12 +134,12 @@ class QueryService(object):
                 data_array = list()
 
                 for element in processed_data:
-                    data_array.append(list( map(float, element.replace('"', '').split(' '))))
+                    data_array.append(list(map(float, element.replace('"', '').split(' '))))
                     logging.debug(data_array)
 
                 processed_obj = list(map(lambda x: dict(zip(varnames, x)), data_array))
                 # logging.debug(processed_obj)
-                    
+
                 for i in range(len(years)):
                     results[i]['year'] = dateutil.parser.parse(f"{years[i]}-01-01").isoformat()
                     results[i].update(processed_obj[i])
@@ -200,7 +201,7 @@ class QueryService(object):
         prepped = session.prepare_request(request)
         response = session.send(prepped)
         return response.text
-        
+
     @staticmethod
     def get_tile_query(bbox, year, model, scenario, indicator, bounds):
         logging.info('[QueryService] Forming rasdaman query')
@@ -223,18 +224,18 @@ class QueryService(object):
             str(bbox['lon'][1]),
             ')]',
             ColoringHelper.normalize(
-                * bounds
+                *bounds
             ),
             ', {Lat: "CRS:1"(0:255), Long: "CRS:1"(0:255)}),  "PNG")]'
         ]
 
-        envelope_list = [ '<?xml version="1.0" encoding="UTF-8" ?>',
-                          '<ProcessCoveragesRequest xmlns="http://www.opengis.net/wcps/1.0" service="WCPS" version="1.0.0">',
-                          '<query><abstractSyntax>',
-                          *query_list,
-                          '</abstractSyntax></query>',
-                          '</ProcessCoveragesRequest>'
-        ]
+        envelope_list = ['<?xml version="1.0" encoding="UTF-8" ?>',
+                         '<ProcessCoveragesRequest xmlns="http://www.opengis.net/wcps/1.0" service="WCPS" version="1.0.0">',
+                         '<query><abstractSyntax>',
+                         *query_list,
+                         '</abstractSyntax></query>',
+                         '</ProcessCoveragesRequest>'
+                         ]
 
         payload = ''.join(envelope_list)
         logging.debug(f"payload: {payload}")
@@ -267,16 +268,14 @@ class QueryService(object):
         bounds_expr = f"[ansi(\"{str(year)}\"), Lat({bbox['lat'][0]}:{bbox['lat'][1]}), Long({bbox['lon'][0]}:{bbox['lon'][1]})]"
         logging.debug(f'bounds_expr: {bounds_expr}')
         query_str = f'for cov in ({coverage}) return encode(scale(((cov.{indicator}){bounds_expr} = {str(no_data)} ) * 255, {{Lat: "CRS:1"(0:255), Long: "CRS:1"(0:255)}}),"PNG")'
-        
 
-        envelope_list = [ '<?xml version="1.0" encoding="UTF-8" ?>',
-                          '<ProcessCoveragesRequest xmlns="http://www.opengis.net/wcps/1.0" service="WCPS" version="1.0.0">',
-                          '<query><abstractSyntax>',
-                          query_str,
-                          '</abstractSyntax></query>',
-                          '</ProcessCoveragesRequest>'
-        ]
-
+        envelope_list = ['<?xml version="1.0" encoding="UTF-8" ?>',
+                         '<ProcessCoveragesRequest xmlns="http://www.opengis.net/wcps/1.0" service="WCPS" version="1.0.0">',
+                         '<query><abstractSyntax>',
+                         query_str,
+                         '</abstractSyntax></query>',
+                         '</ProcessCoveragesRequest>'
+                         ]
 
         payload = ''.join(envelope_list)
         logging.debug(f"payload: {payload}")
@@ -299,7 +298,7 @@ class QueryService(object):
             logging.debug(f"[QueryService] Temporary raster filename: {raster_filename}")
             f.close()
             return raster_filename
-       
+
     @staticmethod
     def get_tile_diff_query(bbox, year, model, scenario, indicator, bounds, year_b, dset_b):
         logging.info('[QueryService] Forming rasdaman query')
@@ -308,7 +307,7 @@ class QueryService(object):
         logging.debug(f'coverage_b: {dset_b}')
         logging.debug(f'bounds: {bounds}')
 
-        lower_bound_expr = ' - ' + str(bounds[0]) if float(bounds[0]) >= 0 else str( ' + ' +  str(abs(bounds[0])) )
+        lower_bound_expr = ' - ' + str(bounds[0]) if float(bounds[0]) >= 0 else str(' + ' + str(abs(bounds[0])))
         logging.debug(lower_bound_expr)
         bounds_range = str(float(bounds[1]) - float(bounds[0]))
         logging.debug(bounds_range)
@@ -321,18 +320,18 @@ class QueryService(object):
             f" - (cov2.{indicator})[ansi(\"{year}\"),",
             bbox_expr,
             f") {lower_bound_expr} ) * (255 / ({bounds_range} )),",
-            "{Lat: \"CRS:1\"(0:255), Long: \"CRS:1\"(0:255)}),\"PNG\")]" # Not a f-expression
-            ])
+            "{Lat: \"CRS:1\"(0:255), Long: \"CRS:1\"(0:255)}),\"PNG\")]"  # Not a f-expression
+        ])
 
         logging.debug(query)
-        
-        envelope_list = [ '<?xml version="1.0" encoding="UTF-8" ?>',
-                          '<ProcessCoveragesRequest xmlns="http://www.opengis.net/wcps/1.0" service="WCPS" version="1.0.0">',
-                          '<query><abstractSyntax>',
-                          query,
-                          '</abstractSyntax></query>',
-                          '</ProcessCoveragesRequest>'
-        ]
+
+        envelope_list = ['<?xml version="1.0" encoding="UTF-8" ?>',
+                         '<ProcessCoveragesRequest xmlns="http://www.opengis.net/wcps/1.0" service="WCPS" version="1.0.0">',
+                         '<query><abstractSyntax>',
+                         query,
+                         '</abstractSyntax></query>',
+                         '</ProcessCoveragesRequest>'
+                         ]
 
         payload = ''.join(envelope_list)
         logging.debug(f"payload: {payload}")
@@ -356,7 +355,6 @@ class QueryService(object):
             f.close()
             return raster_filename
 
-        
     @staticmethod
     def get_rasdaman_fields(scenario, model):
         # Need to parse xml
@@ -377,7 +375,7 @@ class QueryService(object):
         session = Session()
         prepped = session.prepare_request(request)
         try:
-            response = session.send(prepped, timeout = 15)
+            response = session.send(prepped, timeout=15)
         except ConnectTimeout:
             raise RasdamanError('Rasdaman not reachable')
         if response.status_code == 404:
@@ -387,10 +385,10 @@ class QueryService(object):
 
     @staticmethod
     def convert(query):
-        logging.info('Converting Query: '+query)
+        logging.info('Converting Query: ' + query)
         try:
             config = {
-                'uri': '/convert/sql2SQL?sql='+query,
+                'uri': '/convert/sql2SQL?sql=' + query,
                 'method': 'GET'
             }
             response = request_to_microservice(config)
@@ -410,10 +408,10 @@ class QueryService(object):
     def get_clone_url(dataset_id, query):
         return {
             'httpMethod': 'POST',
-            'url': '/v1/dataset/'+dataset_id+'/clone',
+            'url': '/v1/dataset/' + dataset_id + '/clone',
             'body': {
                 'dataset': {
-                    'datasetUrl': '/query/'+dataset_id+'?sql='+query,
+                    'datasetUrl': '/query/' + dataset_id + '?sql=' + query,
                     'application': [
                         'your',
                         'apps'

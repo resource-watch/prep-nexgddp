@@ -1,20 +1,23 @@
 """MIDDLEWARE"""
 
-from functools import wraps
-from flask import request, redirect
 import json
-from nexgddp.routes.api import error
-from nexgddp.services.geostore_service import GeostoreService
-from nexgddp.services.redis_service import RedisService
-from nexgddp.services.layer_service import LayerService
-from nexgddp.services.dataset_service import DatasetService
-from nexgddp.services.storage_service import StorageService
-from nexgddp.errors import GeostoreNotFound, InvalidCoordinates, LayerNotFound
-
 import logging
+from functools import wraps
+
+from flask import request, redirect
+
+from nexgddp.errors import GeostoreNotFound, LayerNotFound
+from nexgddp.routes.api import error
+from nexgddp.services.dataset_service import DatasetService
+from nexgddp.services.geostore_service import GeostoreService
+from nexgddp.services.layer_service import LayerService
+from nexgddp.services.redis_service import RedisService
+from nexgddp.services.storage_service import StorageService
+
 
 def get_bbox_by_hash(func):
     """Get geodata"""
+
     @wraps(func)
     def wrapper(*args, **kwargs):
         geostore = request.args.get('geostore', None)
@@ -28,11 +31,13 @@ def get_bbox_by_hash(func):
 
         kwargs["bbox"] = bbox
         return func(*args, **kwargs)
+
     return wrapper
 
 
 def get_latlon(func):
     """Get geodata"""
+
     @wraps(func)
     def wrapper(*args, **kwargs):
         geostore = request.args.get('geostore', None)
@@ -45,11 +50,13 @@ def get_latlon(func):
             bbox = [lat, lon]
             kwargs["bbox"] = bbox
         return func(*args, **kwargs)
+
     return wrapper
 
 
 def get_year(func):
     """Get geodata"""
+
     @wraps(func)
     def wrapper(*args, **kwargs):
         year = request.args.get('year', None)
@@ -58,27 +65,30 @@ def get_year(func):
         if not year:
             kwargs["year"] = None
         return func(*args, **kwargs)
+
     return wrapper
+
 
 def get_tile_attrs(func):
     """Get style"""
+
     @wraps(func)
     def wrapper(*args, **kwargs):
         layer_object = kwargs.get('layer_object', None)
         layer_config = layer_object.get('layerConfig', None)
         dataset = layer_object.get('dataset', None)
         logging.debug(f'dataset: {dataset}')
-        
+
         logging.debug('Obtaining style')
         layer_style = layer_config.get('colorRamp')
         no_data = layer_config.get('noData')
-        
+
         logging.debug(layer_style)
         kwargs["style"] = layer_style
 
         logging.debug(no_data)
         kwargs["no_data"] = no_data
-        
+
         logging.debug('Obtaining year')
         # year = layer_config.get('year')
         # logging.debug(f'year: {year}')
@@ -87,14 +97,13 @@ def get_tile_attrs(func):
         indicator = layer_config.get('indicator')
         logging.debug(f'indicator: {indicator}')
         kwargs["indicator"] = indicator
-  
+
         logging.debug('Obtaining scenario and model')
         dataset_object = DatasetService.get(dataset)
         tablename = dataset_object.get('tableName', None)
         logging.debug(f'tablename: {tablename}')
         kwargs['model'] = tablename.split('/')[1]
         kwargs['scenario'] = tablename.split('/')[0]
-
 
         is_comparison = layer_config.get('compareWith')
         logging.debug(f"is_comparison: {is_comparison}")
@@ -115,24 +124,27 @@ def get_tile_attrs(func):
             kwargs["dset_b"] = None
         del kwargs["layer_object"]
         return func(*args, **kwargs)
+
     return wrapper
+
 
 def get_diff_attrs(func):
     """Get style"""
+
     @wraps(func)
     def wrapper(*args, **kwargs):
         req_body = request.get_json(force=True)
         logging.debug(req_body)
         dset_a = request.get_json().get('dset_a')
         dataset_object_a = DatasetService.get(dset_a)
-        tablename_a =  '_'.join(dataset_object_a.get('tableName').split('/')) + '_processed'
+        tablename_a = '_'.join(dataset_object_a.get('tableName').split('/')) + '_processed'
         logging.debug(tablename_a)
         kwargs["dset_a"] = tablename_a
-        
+
         dset_b = request.get_json().get('dset_b')
         if dset_b:
             dataset_object_b = DatasetService.get(dset_b)
-            tablename_b =  '_'.join(dataset_object_b.get('tableName').split('/')) + '_processed'
+            tablename_b = '_'.join(dataset_object_b.get('tableName').split('/')) + '_processed'
             logging.debug(tablename_b)
             kwargs["dset_b"] = tablename_b
 
@@ -155,13 +167,15 @@ def get_diff_attrs(func):
         varnames = request.get_json().get('varnames')
         logging.debug(f'varnames: {varnames}')
         kwargs["varnames"] = varnames
-        
+
         return func(*args, **kwargs)
+
     return wrapper
 
 
 def get_layer(func):
     """Get geodata"""
+
     @wraps(func)
     def wrapper(*args, **kwargs):
         logging.debug('Getting layer')
@@ -174,10 +188,13 @@ def get_layer(func):
         logging.debug(f'layer_object: {layer_object}')
         kwargs["layer_object"] = layer_object
         return func(*args, **kwargs)
+
     return wrapper
+
 
 def tile_exists(func):
     """Checks if the tile exists in the cache"""
+
     @wraps(func)
     def wrapper(*args, **kwargs):
         logging.info("[Middleware] Checking if tile exists in cache")
@@ -191,7 +208,7 @@ def tile_exists(func):
             kwargs['dset_b']
         )
         logging.debug(f"cache_key: {cache_key}")
-        
+
         # request_id = request.path + '_' + str(kwargs['year'])
         # logging.debug(request_id)
         url = RedisService.get(cache_key)
@@ -202,17 +219,21 @@ def tile_exists(func):
         else:
             logging.debug("Tile found, redirecting")
             return redirect(url)
+
     return wrapper
+
 
 def is_microservice(func):
     """Get geodata"""
+
     @wraps(func)
     def wrapper(*args, **kwargs):
-        logging.debug("Checking microservice user")        
+        logging.debug("Checking microservice user")
         logged_user = json.loads(request.args.get("loggedUser", None))
         if logged_user.get("id") == "microservice":
             logging.debug("is microservice");
             return func(*args, **kwargs)
         else:
             return error(status=403, detail="Not authorized")
+
     return wrapper

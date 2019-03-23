@@ -40,20 +40,26 @@ class XMLParserError(Error):
 class InvalidField(Error):
     pass
 
+
 class InvalidCoordinates(Error):
     pass
+
 
 class CoordinatesNeeded(Error):
     pass
 
+
 class LayerNotFound(Error):
     pass
+
 
 class DatasetNotFound(Error):
     pass
 
+
 class RasdamanError(Error):
     pass
+
 
 class CoverageNotFound(Error):
     pass

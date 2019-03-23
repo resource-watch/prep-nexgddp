@@ -1,5 +1,6 @@
-import logging
 import mercantile
+
+
 # from pyproj import Proj, transform
 
 class TileService(object):
@@ -17,5 +18,5 @@ class TileService(object):
             'lat': [coords[1], coords[3]],
             'lon': [coords[0], coords[2]]
         }
-        
+
         return result

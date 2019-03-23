@@ -1,8 +1,9 @@
 """ Layer service """
-import json
+
+from CTRegisterMicroserviceFlask import request_to_microservice
 
 from nexgddp.errors import LayerNotFound
-from CTRegisterMicroserviceFlask import request_to_microservice
+
 
 class LayerService(object):
 
@@ -17,7 +18,7 @@ class LayerService(object):
     @staticmethod
     def get(layer):
         config = {
-            'uri': '/layer/'+layer,
+            'uri': '/layer/' + layer,
             'method': 'GET'
         }
         return LayerService.execute(config)
