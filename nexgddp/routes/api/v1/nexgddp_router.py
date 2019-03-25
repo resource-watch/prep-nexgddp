@@ -13,7 +13,7 @@ from nexgddp.helpers.coloring_helper import ColoringHelper
 
 from nexgddp.config import SETTINGS
 from nexgddp.errors import SqlFormatError, PeriodNotValid, TableNameNotValid, GeostoreNeeded, InvalidField, \
-    CoordinatesNeeded, CoverageNotFound
+    CoordinatesNeeded, CoverageNotFound, RasdamanError
 from nexgddp.middleware import get_bbox_by_hash, get_latlon, get_tile_attrs, get_layer, get_year, tile_exists, \
     is_microservice, get_diff_attrs
 # from nexgddp import cache
@@ -417,14 +417,19 @@ def get_tile(z, x, y, model, scenario, year, style, indicator, layer, compare_ye
     logging.debug(f"bbox: {bbox}")
     bounds = ColoringHelper.get_data_bounds(style)
     logging.debug(bounds)
-    if compare_year:
-        logging.debug(f"[rout] compare_year: {compare_year}")
-        if not dset_b:
-            dset_b = f"{scenario}_{model}_processed"
-        rasterfile = QueryService.get_tile_diff_query(bbox, year, model, scenario, indicator, bounds, compare_year,
-                                                      dset_b)
-    else:
-        rasterfile = QueryService.get_tile_query(bbox, year, model, scenario, indicator, bounds)
+    try:
+        if compare_year:
+            logging.debug(f"[rout] compare_year: {compare_year}")
+            if not dset_b:
+                dset_b = f"{scenario}_{model}_processed"
+            rasterfile = QueryService.get_tile_diff_query(bbox, year, model, scenario, indicator, bounds, compare_year,
+                                                          dset_b)
+        else:
+            rasterfile = QueryService.get_tile_query(bbox, year, model, scenario, indicator, bounds)
+    except PeriodNotValid as e:
+        return error(status=400, detail=e.message)
+    except RasdamanError as e:
+        return error(status=500, detail=e.message)
 
     try:
         colored_response = ColoringHelper.colorize(rasterfile, style=style)

@@ -15,6 +15,7 @@ from requests.exceptions import ConnectTimeout
 
 from nexgddp.errors import SqlFormatError, PeriodNotValid, TableNameNotValid, GeostoreNeeded, RasdamanError
 from nexgddp.services.xml_service import XMLService
+from nexgddp.errors import XMLParserError
 
 RASDAMAN_URL = os.getenv('RASDAMAN_URL')
 
@@ -250,7 +251,13 @@ class QueryService(object):
         prepped = session.prepare_request(request)
         response = session.send(prepped)
         if response.status_code == 404:
-            raise PeriodNotValid('Data not found')
+            try:
+                if type(XMLService.get_domain(response._content)) is dict:
+                    raise PeriodNotValid('No data found for given query')
+                else:
+                    raise RasdamanError('Rasdaman server not reachable')
+            except XMLParserError:
+                raise RasdamanError('Rasdaman server not reachable')
         with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as f:
             for chunk in response.iter_content(chunk_size=1024):
                 f.write(chunk)
