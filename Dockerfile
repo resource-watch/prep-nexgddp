@@ -46,7 +46,7 @@ WORKDIR /opt/$NAME
 
 COPY ./$NAME /opt/$NAME/$NAME
 COPY ./microservice /opt/$NAME/microservice
-RUN chown $USER:$USER /opt/$NAME
+RUN chown -R $USER:$USER /opt/$NAME
 
 # Tell Docker we are going to use this ports
 EXPOSE 3078
