@@ -1,6 +1,7 @@
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
+  namespace: prep
   labels:
     name: {name}
   name: {name}
@@ -30,7 +31,7 @@ spec:
           - name: ENVIRONMENT
             value: prod
           - name: LOCAL_URL
-            value: http://{name}.default.svc.cluster.local:3078
+            value: http://{name}.prep.svc.cluster.local:3078
           - name: CT_URL
             valueFrom:
                 secretKeyRef:
