@@ -9,13 +9,13 @@ import dateutil.parser
 from CTRegisterMicroserviceFlask import request_to_microservice
 from flask import Flask, jsonify, request, Blueprint, send_file
 from flask_cache import Cache
-from nexgddp.helpers.coloring_helper import ColoringHelper
 
 from nexgddp.config import SETTINGS
 from nexgddp.errors import SqlFormatError, PeriodNotValid, TableNameNotValid, GeostoreNeeded, InvalidField, \
     CoordinatesNeeded, CoverageNotFound
+from nexgddp.helpers.coloring_helper import ColoringHelper
 from nexgddp.middleware import get_bbox_by_hash, get_latlon, get_tile_attrs, get_layer, get_year, tile_exists, \
-    is_microservice, get_diff_attrs
+    is_microservice, get_diff_attrs, is_microservice_or_admin
 # from nexgddp import cache
 from nexgddp.routes.api import error
 from nexgddp.services.diff_service import DiffService
@@ -643,3 +643,11 @@ def getLocaDataset(indicator, scenario, temporal_res):
         "status": 404,
         "detail": "Dataset doesn't exist"
     }]}), 404
+
+
+@nexgddp_endpoints.route('/rest-datasets/nexgddp/<dataset_id>', methods=['DELETE'])
+@is_microservice_or_admin
+def delete(dataset_id):
+    """Delete GEE Dataset"""
+    logging.info('Deleting GEE dataset {}'.format(dataset_id))
+    return b'', 204
