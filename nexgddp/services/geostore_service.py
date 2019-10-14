@@ -1,7 +1,8 @@
 """Geostore SERVICE"""
 
-from nexgddp.errors import GeostoreNotFound
 from CTRegisterMicroserviceFlask import request_to_microservice
+
+from nexgddp.errors import GeostoreNotFound
 
 
 class GeostoreService(object):
@@ -23,7 +24,7 @@ class GeostoreService(object):
     @staticmethod
     def get(geostore):
         config = {
-            'uri': '/geostore/'+geostore,
+            'uri': '/geostore/' + geostore,
             'method': 'GET'
         }
         return GeostoreService.execute(config)

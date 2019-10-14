@@ -1,8 +1,9 @@
 """XML SERVICE"""
 
 import logging
-from nexgddp.errors import XMLParserError
 import xml.etree.ElementTree as ET
+
+from nexgddp.errors import XMLParserError
 
 
 class XMLService(object):

@@ -1,9 +1,14 @@
-import logging
 import datetime
+import logging
+
 import dateutil.parser
-from nexgddp.services.query_service import QueryService
+
 from nexgddp.errors import PeriodNotValid
+from nexgddp.services.query_service import QueryService
+
 """ Diff service """
+
+
 class DiffService(object):
     # @staticmethod
     # def execute(config):

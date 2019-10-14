@@ -1,16 +1,10 @@
 """Color helper"""
 import logging
-import tempfile
-import os
-import io
-#import lycon
+
 import cv2
 import numpy as np
-from colour import Color
-from flask import send_file
-from functools import reduce
 from matplotlib.colors import LinearSegmentedColormap
-import matplotlib.colors
+
 from nexgddp.errors import CoverageNotFound
 
 
@@ -33,15 +27,16 @@ class ColoringHelper(object):
         logging.debug(f"color_ramps: {color_ramps}")
         stops = sorted([k for k in color_ramps])
         logging.debug(f"stops: {stops}")
-        sorted_values = list(map(lambda color: f"#{color[5:7]}{color[3:5]}{color[1:3]}", [color_ramps[k] for k in stops]))
+        sorted_values = list(
+            map(lambda color: f"#{color[5:7]}{color[3:5]}{color[1:3]}", [color_ramps[k] for k in stops]))
         logging.debug(f"sorted_values: {sorted_values}")
         stop_range = [stops[0], stops[-1]]
         logging.debug(f"stop_range: {stop_range}")
         norms = list(map(
-            lambda stop: float(1/(stop_range[1]-stop_range[0]) * (stop-stop_range[1]) + 1),
+            lambda stop: float(1 / (stop_range[1] - stop_range[0]) * (stop - stop_range[1]) + 1),
             stops
         ))
-        norms[0] = 0.0 # Sometimes a *really* small float appears
+        norms[0] = 0.0  # Sometimes a *really* small float appears
         norms[-1] = 1.0
         logging.debug(f"norms: {norms}")
         colormap = LinearSegmentedColormap.from_list("custom_color_ramp", list(zip(norms, sorted_values)))
@@ -68,10 +63,10 @@ class ColoringHelper(object):
         logging.debug(f"[ColoringHelper] Blending alpha")
         output_raster = cv2.imread(output_filename, cv2.IMREAD_COLOR)
         output_mask = cv2.imread(mask_filename, cv2.IMREAD_GRAYSCALE)
-        expanded_mask = np.expand_dims(output_mask, axis = -1)
+        expanded_mask = np.expand_dims(output_mask, axis=-1)
         logging.debug(expanded_mask.shape)
         logging.debug(output_raster.shape)
-        final_result = np.concatenate((output_raster, 255 - expanded_mask), axis = -1)
+        final_result = np.concatenate((output_raster, 255 - expanded_mask), axis=-1)
         cv2.imwrite(output_filename, final_result)
         logging.debug(f"final_result.shape: {final_result.shape}")
         return output_filename

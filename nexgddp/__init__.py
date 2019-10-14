@@ -1,16 +1,15 @@
 """The API MODULE"""
 
-import os
-import json
 import logging
+import os
 
+import CTRegisterMicroserviceFlask
 from flask import Flask
-from flask_cache import Cache
+
 from nexgddp.config import SETTINGS
 from nexgddp.routes.api import error
 from nexgddp.routes.api.v1 import nexgddp_endpoints
 from nexgddp.utils.files import load_config_json
-import CTRegisterMicroserviceFlask
 
 logging.basicConfig(
     level=SETTINGS.get('logging', {}).get('level'),
@@ -32,7 +31,8 @@ CTRegisterMicroserviceFlask.register(
     name='ps',
     info=info,
     swagger=swagger,
-    mode=CTRegisterMicroserviceFlask.AUTOREGISTER_MODE if os.getenv('CT_REGISTER_MODE') and os.getenv('CT_REGISTER_MODE') == 'auto' else CTRegisterMicroserviceFlask.NORMAL_MODE,
+    mode=CTRegisterMicroserviceFlask.AUTOREGISTER_MODE if os.getenv('CT_REGISTER_MODE') and os.getenv(
+        'CT_REGISTER_MODE') == 'auto' else CTRegisterMicroserviceFlask.NORMAL_MODE,
     ct_url=os.getenv('CT_URL'),
     url=os.getenv('LOCAL_URL')
 )
