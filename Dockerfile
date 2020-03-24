@@ -1,5 +1,5 @@
 FROM python:3.6.2-stretch
-MAINTAINER Enrique Cornejo enrique.cornejo@vizzuality.com
+MAINTAINER info@vizzuality.com
 
 ENV NAME nexgddp
 ENV USER nexgddp
