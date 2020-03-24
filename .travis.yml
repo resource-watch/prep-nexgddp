@@ -8,22 +8,6 @@ addons:
   apt:
     packages:
     - libgdal-dev
-    - gcc
-    - bash
-    - git
-    - build-essential
-    - libcurl4-openssl-dev
-    - libffi-dev
-    - libjpeg-dev
-    - libpq-dev
-    - libssl-dev
-    - libxml2-dev
-    - libxslt1-dev
-    - libgdal-dev
-    - gdal-bin
-    - make
-    - libpng-dev
-    - cmake
 install:
     - pip install -r requirements.txt
     - pip install -r requirements_dev.txt
