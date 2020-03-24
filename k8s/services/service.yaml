@@ -3,10 +3,10 @@ kind: Service
 metadata:
   namespace: prep
   labels:
-    name: {name}
-  name: {name}
+    name: nexgddp
+  name: nexgddp
 spec:
   ports:
     - port: 3078
   selector:
-    name: {name}
+    name: nexgddp
