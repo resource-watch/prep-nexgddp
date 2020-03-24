@@ -1,31 +1,32 @@
-develop:
-  extends:
-    file: base.yml
-    service: base
-  ports:
-    - "35733:35730"
-  container_name: nex-gddp-develop
-  environment:
-    CT_REGISTER_MODE: auto
-    ENVIRONMENT: dev
-    DEBUG: "True"
-    CT_URL: http://mymachine:9000
-    CT_TOKEN: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6Im1pY3Jvc2VydmljZSIsImNyZWF0ZWRBdCI6IjIwMTYtMDktMTQifQ.IRCIRm1nfIQTfda_Wb6Pg-341zhV8soAgzw7dd5HxxQ
-    LOCAL_URL: http://mymachine:3078
-    API_VERSION: v1
-    RASDAMAN_URL: http://54.226.117.123:8080/rasdaman/ows
-    REDIS_URL: redis://redis:6379
-    GCLOUD_STORAGE: ${GCLOUD_STORAGE}
-    GOOGLE_APPLICATION_CREDENTIALS: /opt/nexgddp/storage.json
-  command: develop
-  volumes:
-    - ./nexgddp:/opt/nexgddp/nexgddp
-  restart: always
-  links:
-    - redis
-  extra_hosts:
-    - "mymachine:192.168.1.78"
-redis:
-  image: redis
-  restart: always
+version: "3"
+services:
+  develop:
+    build: .
+    ports:
+      - "3078:3078"
+    container_name: nex-gddp-develop
+    environment:
+      PORT: 3078
+      CT_REGISTER_MODE: auto
+      ENVIRONMENT: dev
+      DEBUG: "True"
+      CT_URL: http://mymachine:9000
+      CT_TOKEN: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6Im1pY3Jvc2VydmljZSIsImNyZWF0ZWRBdCI6IjIwMTYtMDktMTQifQ.IRCIRm1nfIQTfda_Wb6Pg-341zhV8soAgzw7dd5HxxQ
+      LOCAL_URL: http://mymachine:3078
+      API_VERSION: v1
+      RASDAMAN_URL: http://54.226.117.123:8080/rasdaman/ows
+      REDIS_URL: redis://redis:6379
+      GCLOUD_STORAGE: ${GCLOUD_STORAGE}
+      GOOGLE_APPLICATION_CREDENTIALS: /opt/nexgddp/storage.json
+    command: develop
+    volumes:
+      - ./nexgddp:/opt/nexgddp/nexgddp
+    restart: always
+    links:
+      - redis
+    extra_hosts:
+      - "mymachine:192.168.1.78"
+  redis:
+    image: redis
+    restart: always
 

@@ -1,5 +1,7 @@
 # PREP - NEXGDDP microservice
 
+[![Build Status](https://travis-ci.org/Vizzuality/prep-nexgddp.svg?branch=develop)](https://travis-ci.org/Vizzuality/prep-nexgddp)
+
 ## Getting started
 
 ### Requirements

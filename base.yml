@@ -1,7 +1,0 @@
-base:
-  build: .
-  ports:
-    - "3078:3078"
-  environment:
-    PORT: 3078
-  container_name: nex-gddp

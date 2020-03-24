@@ -3,8 +3,8 @@ kind: Deployment
 metadata:
   namespace: prep
   labels:
-    name: {name}
-  name: {name}
+    name: nexgddp
+  name: nexgddp
 spec:
   revisionHistoryLimit: 2
   template:
@@ -12,11 +12,11 @@ spec:
       annotations:
         chaos.alpha.kubernetes.io/enabled: "true"
       labels:
-        name: {name}
+        name: nexgddp
     spec:
       containers:
-      - name: {name}
-        image: vizzuality/{name}
+      - name: nexgddp
+        image: vizzuality/nexgddp
         imagePullPolicy: Always
         resources:
           requests:
@@ -31,7 +31,7 @@ spec:
           - name: ENVIRONMENT
             value: prod
           - name: LOCAL_URL
-            value: http://{name}.prep.svc.cluster.local:3078
+            value: http://nexgddp.prep.svc.cluster.local:3078
           - name: CT_URL
             valueFrom:
                 secretKeyRef:
