@@ -3,6 +3,15 @@
 [![Build Status](https://travis-ci.org/Vizzuality/prep-nexgddp.svg?branch=develop)](https://travis-ci.org/Vizzuality/prep-nexgddp)
 [![Test Coverage](https://api.codeclimate.com/v1/badges/95cbefa669563539f187/test_coverage)](https://codeclimate.com/github/Vizzuality/prep-nexgddp/test_coverage)
 
+## Dependencies
+
+Dependencies on other Microservices:
+- [Dataset](https://github.com/resource-watch/dataset/)
+- [Geostore](https://github.com/gfw-api/gfw-geostore-api)
+- [GFW OGR](https://github.com/gfw-api/gfw-ogr-api)
+- [Layer](https://github.com/resource-watch/layer)
+- [Query](https://github.com/resource-watch/query/)
+
 ## Getting started
 
 ### Requirements
