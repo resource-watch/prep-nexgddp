@@ -14,7 +14,7 @@ from nexgddp.config import SETTINGS
 from nexgddp.errors import SqlFormatError, PeriodNotValid, TableNameNotValid, GeostoreNeeded, InvalidField, \
     CoordinatesNeeded, CoverageNotFound
 from nexgddp.helpers.coloring_helper import ColoringHelper
-from nexgddp.middleware import get_bbox_by_hash, get_latlon, get_tile_attrs, get_layer, get_year, tile_exists, \
+from nexgddp.middleware import get_bbox_by_hash, get_latlon, get_tile_attrs, get_layer, get_year, \
     is_microservice, get_diff_attrs, is_microservice_or_admin
 # from nexgddp import cache
 from nexgddp.routes.api import error
@@ -409,7 +409,6 @@ def register_dataset():
 @get_layer
 @get_year
 @get_tile_attrs
-@tile_exists
 def get_tile(z, x, y, model, scenario, year, style, indicator, layer, compare_year=None, dset_b=None, no_data=None):
     logging.info(f'Getting tile for {z} {x} {y}')
     logging.debug(compare_year)
