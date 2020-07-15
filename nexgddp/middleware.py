@@ -2,9 +2,8 @@
 
 import json
 import logging
-from functools import wraps
-
 from flask import request, redirect
+from functools import wraps
 
 from nexgddp.errors import GeostoreNotFound, LayerNotFound
 from nexgddp.routes.api import error
@@ -188,37 +187,6 @@ def get_layer(func):
         logging.debug(f'layer_object: {layer_object}')
         kwargs["layer_object"] = layer_object
         return func(*args, **kwargs)
-
-    return wrapper
-
-
-def tile_exists(func):
-    """Checks if the tile exists in the cache"""
-
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        logging.info("[Middleware] Checking if tile exists in cache")
-        logging.debug(f"request.path: {request.path}")
-        z, x, y = list(map(int, request.path.split('/')[-3:]))
-        cache_key = StorageService.make_tile_cache_key(
-            kwargs['layer'],
-            z, x, y,
-            kwargs['year'],
-            kwargs['compare_year'],
-            kwargs['dset_b']
-        )
-        logging.debug(f"cache_key: {cache_key}")
-
-        # request_id = request.path + '_' + str(kwargs['year'])
-        # logging.debug(request_id)
-        url = RedisService.get(cache_key)
-        logging.debug(f'url: {url}')
-        if url is None:
-            logging.debug("No tile found in cache")
-            return func(*args, **kwargs)
-        else:
-            logging.debug("Tile found, redirecting")
-            return redirect(url)
 
     return wrapper
 
