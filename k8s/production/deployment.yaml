@@ -1,12 +1,21 @@
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
-  namespace: prep
   labels:
     name: nexgddp
   name: nexgddp
+  namespace: prep
 spec:
+  progressDeadlineSeconds: 2147483647
   revisionHistoryLimit: 2
+  selector:
+    matchLabels:
+      name: nexgddp
+  strategy:
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+    type: RollingUpdate
   template:
     metadata:
       labels:
@@ -22,61 +31,67 @@ spec:
                     values:
                       - apps
       containers:
-      - name: nexgddp
-        image: vizzuality/nexgddp
-        imagePullPolicy: Always
-        resources:
-          requests:
-            memory: "128Mi"
-          limits:
-            memory: "512Mi"
-        args:
-          - start
-        env:
-          - name: PORT
-            value: "3078"
-          - name: ENVIRONMENT
-            value: prod
-          - name: LOCAL_URL
-            value: http://nexgddp.prep.svc.cluster.local:3078
-          - name: CT_URL
-            valueFrom:
+        - args:
+            - start
+          env:
+            - name: PORT
+              value: "3078"
+            - name: ENVIRONMENT
+              value: prod
+            - name: LOCAL_URL
+              value: http://nexgddp.prep.svc.cluster.local:3078
+            - name: CT_URL
+              valueFrom:
                 secretKeyRef:
-                  name: mssecrets
                   key: CT_URL
-          - name: CT_TOKEN
-            valueFrom:
-                secretKeyRef:
                   name: mssecrets
+            - name: CT_TOKEN
+              valueFrom:
+                secretKeyRef:
                   key: CT_TOKEN
-          - name: CT_REGISTER_MODE
-            valueFrom:
-                secretKeyRef:
                   name: mssecrets
+            - name: CT_REGISTER_MODE
+              valueFrom:
+                secretKeyRef:
                   key: CT_REGISTER_MODE
-          - name: API_VERSION
-            valueFrom:
-                secretKeyRef:
                   name: mssecrets
+            - name: API_VERSION
+              valueFrom:
+                secretKeyRef:
                   key: API_VERSION
-          - name: RASDAMAN_URL
-            valueFrom:
-                secretKeyRef:
-                  name: dbsecrets
-                  key: RASDAMAN_URL
-          - name: GCLOUD_STORAGE
-            valueFrom:
-                secretKeyRef:
                   name: mssecrets
-                  key: GCLOUD_BACKUPS_CREDENTIALS
-          - name: REDIS_URL
-            valueFrom:
+            - name: RASDAMAN_URL
+              valueFrom:
                 secretKeyRef:
+                  key: RASDAMAN_URL
                   name: dbsecrets
+            - name: GCLOUD_STORAGE
+              valueFrom:
+                secretKeyRef:
+                  key: GCLOUD_BACKUPS_CREDENTIALS
+                  name: mssecrets
+            - name: REDIS_URL
+              valueFrom:
+                secretKeyRef:
                   key: GEE_TILES_REDIS_URI
-          - name: GOOGLE_APPLICATION_CREDENTIALS
-            value: /opt/nexgddp/storage.json
-        ports:
-          - containerPort: 3078
-
+                  name: dbsecrets
+            - name: GOOGLE_APPLICATION_CREDENTIALS
+              value: /opt/nexgddp/storage.json
+          image: vizzuality/nexgddp
+          imagePullPolicy: Always
+          name: nexgddp
+          ports:
+            - containerPort: 3078
+              protocol: TCP
+          resources:
+            limits:
+              memory: 512Mi
+            requests:
+              memory: 128Mi
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+      dnsPolicy: ClusterFirst
       restartPolicy: Always
+      schedulerName: default-scheduler
+      securityContext: { }
+      terminationGracePeriodSeconds: 30
