@@ -1,6 +1,6 @@
 # PREP - NEXGDDP microservice
 
-[![Build Status](https://travis-ci.org/Vizzuality/prep-nexgddp.svg?branch=develop)](https://travis-ci.org/Vizzuality/prep-nexgddp)
+[![Build Status](https://travis-ci.org/Vizzuality/prep-nexgddp.svg?branch=dev)](https://travis-ci.org/Vizzuality/prep-nexgddp)
 [![Test Coverage](https://api.codeclimate.com/v1/badges/95cbefa669563539f187/test_coverage)](https://codeclimate.com/github/Vizzuality/prep-nexgddp/test_coverage)
 
 ## Getting started
