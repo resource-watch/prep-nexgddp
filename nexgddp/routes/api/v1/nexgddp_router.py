@@ -8,15 +8,14 @@ import os
 import dateutil.parser
 from CTRegisterMicroserviceFlask import request_to_microservice
 from flask import Flask, jsonify, request, Blueprint, send_file
-from flask_cache import Cache
+from flask_caching import Cache
 
 from nexgddp.config import SETTINGS
 from nexgddp.errors import SqlFormatError, PeriodNotValid, TableNameNotValid, GeostoreNeeded, InvalidField, \
     CoordinatesNeeded, CoverageNotFound
 from nexgddp.helpers.coloring_helper import ColoringHelper
 from nexgddp.middleware import get_bbox_by_hash, get_latlon, get_tile_attrs, get_layer, get_year, \
-    is_microservice, get_diff_attrs, is_microservice_or_admin
-# from nexgddp import cache
+    is_microservice, get_diff_attrs, is_microservice_or_admin, get_dataset_from_id
 from nexgddp.routes.api import error
 from nexgddp.services.diff_service import DiffService
 from nexgddp.services.query_service import QueryService
@@ -27,14 +26,16 @@ from nexgddp.services.xml_service import XMLService
 
 nexgddp_endpoints = Blueprint('nexgddp_endpoints', __name__)
 
-# mmm
 app = Flask(__name__)
 
-cache = Cache(app, config={
+cache_config = {
     'CACHE_TYPE': 'redis',
     'CACHE_KEY_PREFIX': 'nexgddp_queries',
     'CACHE_REDIS_URL': SETTINGS.get('redis').get('url')
-})
+}
+
+app.config.from_mapping(cache_config)
+cache = Cache(app)
 
 
 def callback_to_dataset(body):
@@ -79,7 +80,7 @@ def get_sql_select(json_sql):
     if not all(val is None for val in select_functions) and not all(val is None for val in select_literals):
         logging.error("Provided functions and literals at the same time")
         raise Exception()
-    # And it's neccesary to select something
+    # And it's necessary to select something
     if select == [None] or len(select) == 0 or select is None:
         raise Exception()
     return select
@@ -92,7 +93,7 @@ def parse_year(value):
         try:
             result = dateutil.parser.parse(value).strftime('%Y-%m-%d')
             return result
-        except Error as e:
+        except Exception as e:
             raise PeriodNotValid("Supplied dates are invalid")
 
 
@@ -195,10 +196,11 @@ def get_years(json_sql, temporal_resolution):
 
 
 def make_cache_key(*args, **kwargs):
-    # This one is for _queries_ - not layers
     logging.debug("Making cache key")
-    # path = request.path
-    sql = request.args.get('sql', None) or request.get_json().get('sql', None)
+    request_json = request.get_json() or {}
+    sql = request.args.get('sql', None) or request_json.get('sql', None)
+    if not sql:
+        return None
     logging.debug(f"Original sql statement: {sql}")
     converted_sql = base64.b64encode(str.encode(str(sql)))
     logging.debug(converted_sql)
@@ -223,7 +225,11 @@ def make_cache_key(*args, **kwargs):
 
 def unless_cache_query(*args, **kwargs):
     logging.info("Checking if previous query failed")
+    if SETTINGS.get('redis').get('url') is None:
+        return True
     cache_key = make_cache_key()
+    if cache_key is None:
+        return True
     logging.debug(f"cache_key: {cache_key}")
     # try:
     res = cache.get(cache_key)
@@ -245,19 +251,22 @@ def unless_cache_query(*args, **kwargs):
 
 
 @nexgddp_endpoints.route('/query/<dataset_id>', methods=['POST'])
+@get_dataset_from_id
 @get_bbox_by_hash
 @get_latlon
 @cache.cached(timeout=0, key_prefix=make_cache_key, unless=unless_cache_query)
-def query(dataset_id, bbox):
+def query(dataset_id, bbox, dataset):
     """NEXGDDP QUERY ENDPOINT"""
     logging.info('[ROUTER] Doing Query of dataset ' + dataset_id)
     # Get and deserialize
-    dataset = request.get_json().get('dataset', None).get('data', None)
-    table_name = dataset.get('attributes').get('tableName')
+    table_name = dataset.get('tableName')
     temporal_resolution = table_name.split('_')[-1]
     logging.debug(f"temporal_resolution: {temporal_resolution}")
     scenario, model = table_name.rsplit('/')
-    sql = request.args.get('sql', None) or request.get_json().get('sql', None)
+
+    request_json = request.get_json() or {}
+    sql = request.args.get('sql', None) or request_json.get('sql', None)
+
     if not sql:
         return error(status=400, detail='sql must be provided')
     # convert
@@ -354,13 +363,13 @@ def query(dataset_id, bbox):
 
 
 @nexgddp_endpoints.route('/fields/<dataset_id>', methods=['POST'])
-def get_fields(dataset_id):
+@get_dataset_from_id
+def get_fields(dataset_id, dataset):
     """NEXGDDP FIELDS ENDPOINT"""
     logging.info('[ROUTER] Getting fields of dataset' + dataset_id)
 
     # Get and deserialize
-    dataset = request.get_json().get('dataset', None).get('data', None)
-    table_name = dataset.get('attributes').get('tableName')
+    table_name = dataset.get('tableName')
     scenario, model = table_name.rsplit('/')
 
     fields_xml = QueryService.get_rasdaman_fields(scenario, model)

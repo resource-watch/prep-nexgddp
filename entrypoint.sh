@@ -9,6 +9,7 @@ case "$1" in
         ;;
     test)
         echo "Test"
+        exec pytest
         ;;
     start)
         echo "Running Start"
