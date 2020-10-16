@@ -12,4 +12,5 @@ services:
       API_VERSION: v1
       CT_URL: http://mymachine:9000
       CT_REGISTER_MODE: auto
+      RASDAMAN_URL: http://rasdaman:9876/
     command: test
