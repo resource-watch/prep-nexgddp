@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wcs:CoverageDescriptions xmlns:gml="http://www.opengis.net/gml/3.2"
+    xmlns:gmlcov="http://www.opengis.net/gmlcov/1.0"
+    xmlns:ows="http://www.opengis.net/ows/2.0"
+    xmlns:swe="http://www.opengis.net/swe/2.0"
+    xmlns:wcs="http://www.opengis.net/wcs/2.0"
+    xmlns:wcsgs="http://www.geoserver.org/wcsgs/2.0"
+    xmlns:xlink="http://www.w3.org/1999/xlink"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation=" http://www.opengis.net/wcs/2.0 http://schemas.opengis.net/wcs/2.0/wcsDescribeCoverage.xsd">
+    <wcs:CoverageDescription gml:id="cum_pr_rcp45_decadal_processed"
+        xmlns="http://www.opengis.net/gml/3.2"
+        xmlns:gmlcov="http://www.opengis.net/gmlcov/1.0" xmlns:swe="http://www.opengis.net/swe/2.0">
+        <boundedBy>
+            <Envelope axisLabels="Lat Long ansi" srsDimension="3"
+                srsName="http://localhost:8080/def/crs-compound?1=http://localhost:8080/def/crs/EPSG/0/4326&amp;2=http://localhost:8080/def/crs/OGC/0/AnsiDate" uomLabels="degree degree d">
+                <lowerCorner>-90 -180 "1971-01-01T00:00:00.000Z"</lowerCorner>
+                <upperCorner>90 180 "2081-01-01T00:00:00.000Z"</upperCorner>
+            </Envelope>
+        </boundedBy>
+        <wcs:CoverageId>cum_pr_rcp45_decadal_processed</wcs:CoverageId>
+        <coverageFunction>
+            <GridFunction>
+                <sequenceRule axisOrder="+3 +1 +2">Linear</sequenceRule>
+                <startPoint>0 0 0</startPoint>
+            </GridFunction>
+        </coverageFunction>
+        <gmlcov:metadata/>
+        <domainSet>
+            <gmlrgrid:ReferenceableGridByVectors dimension="3"
+                gml:id="cum_pr_rcp45_decadal_processed-grid"
+                xmlns:gmlrgrid="http://www.opengis.net/gml/3.3/rgrid" xsi:schemaLocation="http://www.opengis.net/gml/3.3/rgrid http://schemas.opengis.net/gml/3.3/referenceableGrid.xsd">
+                <limits>
+                    <GridEnvelope>
+                        <low>0 0 0</low>
+                        <high>719 1439 11</high>
+                    </GridEnvelope>
+                </limits>
+                <axisLabels>Lat Long ansi</axisLabels>
+                <gmlrgrid:origin>
+                    <Point
+                        gml:id="cum_pr_rcp45_decadal_processed-origin" srsName="http://localhost:8080/def/crs-compound?1=http://localhost:8080/def/crs/EPSG/0/4326&amp;2=http://localhost:8080/def/crs/OGC/0/AnsiDate">
+                        <pos>89.875 -179.875 "1971-01-01T00:00:00.000Z"</pos>
+                    </Point>
+                </gmlrgrid:origin>
+                <gmlrgrid:generalGridAxis>
+                    <gmlrgrid:GeneralGridAxis>
+                        <gmlrgrid:offsetVector srsName="http://localhost:8080/def/crs-compound?1=http://localhost:8080/def/crs/EPSG/0/4326&amp;2=http://localhost:8080/def/crs/OGC/0/AnsiDate">-0.25 0 0</gmlrgrid:offsetVector>
+                        <gmlrgrid:coefficients/>
+                        <gmlrgrid:gridAxesSpanned>Lat</gmlrgrid:gridAxesSpanned>
+                        <gmlrgrid:sequenceRule axisOrder="+1">Linear</gmlrgrid:sequenceRule>
+                    </gmlrgrid:GeneralGridAxis>
+                </gmlrgrid:generalGridAxis>
+                <gmlrgrid:generalGridAxis>
+                    <gmlrgrid:GeneralGridAxis>
+                        <gmlrgrid:offsetVector srsName="http://localhost:8080/def/crs-compound?1=http://localhost:8080/def/crs/EPSG/0/4326&amp;2=http://localhost:8080/def/crs/OGC/0/AnsiDate">0 0.25 0</gmlrgrid:offsetVector>
+                        <gmlrgrid:coefficients/>
+                        <gmlrgrid:gridAxesSpanned>Long</gmlrgrid:gridAxesSpanned>
+                        <gmlrgrid:sequenceRule axisOrder="+1">Linear</gmlrgrid:sequenceRule>
+                    </gmlrgrid:GeneralGridAxis>
+                </gmlrgrid:generalGridAxis>
+                <gmlrgrid:generalGridAxis>
+                    <gmlrgrid:GeneralGridAxis>
+                        <gmlrgrid:offsetVector srsName="http://localhost:8080/def/crs-compound?1=http://localhost:8080/def/crs/EPSG/0/4326&amp;2=http://localhost:8080/def/crs/OGC/0/AnsiDate">0 0 1</gmlrgrid:offsetVector>
+                        <gmlrgrid:coefficients>"1971-01-01T00:00:00.000Z" "1981-01-01T00:00:00.000Z" "1991-01-01T00:00:00.000Z" "2001-01-01T00:00:00.000Z" "2011-01-01T00:00:00.000Z" "2021-01-01T00:00:00.000Z" "2031-01-01T00:00:00.000Z" "2041-01-01T00:00:00.000Z" "2051-01-01T00:00:00.000Z" "2061-01-01T00:00:00.000Z" "2071-01-01T00:00:00.000Z" "2081-01-01T00:00:00.000Z"</gmlrgrid:coefficients>
+                        <gmlrgrid:gridAxesSpanned>ansi</gmlrgrid:gridAxesSpanned>
+                        <gmlrgrid:sequenceRule axisOrder="+1">Linear</gmlrgrid:sequenceRule>
+                    </gmlrgrid:GeneralGridAxis>
+                </gmlrgrid:generalGridAxis>
+            </gmlrgrid:ReferenceableGridByVectors>
+        </domainSet>
+        <gmlcov:rangeType>
+            <swe:DataRecord>
+                <swe:field name="cum_pr_q25">
+                    <swe:Quantity xmlns:swe="http://www.opengis.net/swe/2.0">
+                        <swe:label>cum_pr_q25</swe:label>
+                        <swe:uom code="10^0"/>
+                    </swe:Quantity>
+                </swe:field>
+                <swe:field name="cum_pr">
+                    <swe:Quantity xmlns:swe="http://www.opengis.net/swe/2.0">
+                        <swe:label>cum_pr</swe:label>
+                        <swe:uom code="10^0"/>
+                    </swe:Quantity>
+                </swe:field>
+                <swe:field name="cum_pr_q75">
+                    <swe:Quantity xmlns:swe="http://www.opengis.net/swe/2.0">
+                        <swe:label>cum_pr_q75</swe:label>
+                        <swe:uom code="10^0"/>
+                    </swe:Quantity>
+                </swe:field>
+            </swe:DataRecord>
+        </gmlcov:rangeType>
+        <wcs:ServiceParameters>
+            <wcs:CoverageSubtype>ReferenceableGridCoverage</wcs:CoverageSubtype>
+            <wcs:nativeFormat>application/octet-stream</wcs:nativeFormat>
+        </wcs:ServiceParameters>
+    </wcs:CoverageDescription>
+</wcs:CoverageDescriptions>

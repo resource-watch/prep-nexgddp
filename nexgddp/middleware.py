@@ -2,16 +2,16 @@
 
 import json
 import logging
-from flask import request, redirect
 from functools import wraps
+
+from flask import request
 
 from nexgddp.errors import GeostoreNotFound, LayerNotFound
 from nexgddp.routes.api import error
 from nexgddp.services.dataset_service import DatasetService
 from nexgddp.services.geostore_service import GeostoreService
 from nexgddp.services.layer_service import LayerService
-from nexgddp.services.redis_service import RedisService
-from nexgddp.services.storage_service import StorageService
+from nexgddp.errors import DatasetNotFound
 
 
 def get_bbox_by_hash(func):
@@ -217,5 +217,31 @@ def is_microservice_or_admin(func):
             return func(*args, **kwargs)
         else:
             return error(status=403, detail="Not authorized")
+
+    return wrapper
+
+
+def get_dataset_from_id(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        logging.debug("Getting dataset from id")
+
+        try:
+            dataset_object = DatasetService.get(kwargs['dataset_id'])
+        except DatasetNotFound:
+            return error(status=404, detail="Dataset with id {} doesn't exist".format(kwargs['dataset_id']))
+
+        connector_type = dataset_object.get('connectorType', None)
+        provider = dataset_object.get('provider', None)
+
+        if connector_type != "rest":
+            return error(status=422, detail="This operation is only supported for datasets with connectorType 'rest'")
+
+        if provider != "nexgddp":
+            return error(status=422, detail="This operation is only supported for datasets with provider 'nexgddp'")
+
+        kwargs['dataset'] = dataset_object
+
+        return func(*args, **kwargs)
 
     return wrapper

@@ -57,9 +57,17 @@ class DatasetNotFound(Error):
     pass
 
 
+class RedisError(Error):
+    pass
+
+
 class RasdamanError(Error):
     pass
 
 
 class CoverageNotFound(Error):
+    pass
+
+
+class DatasetNotFound(Error):
     pass
