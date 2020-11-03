@@ -9,6 +9,7 @@ case "$1" in
         ;;
     test)
         echo "Test"
+ 	      echo -e "$GCLOUD_STORAGE" | base64 -d > storage.json
         exec pytest
         ;;
     start)
