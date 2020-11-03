@@ -1,16 +1,12 @@
 """API ROUTER"""
-import base64
 import io
-import json
 import logging
 import os
 
 import dateutil.parser
 from CTRegisterMicroserviceFlask import request_to_microservice
 from flask import Flask, jsonify, request, Blueprint, send_file
-from flask_caching import Cache
 
-from nexgddp.config import SETTINGS
 from nexgddp.errors import SqlFormatError, PeriodNotValid, TableNameNotValid, GeostoreNeeded, InvalidField, \
     CoordinatesNeeded, CoverageNotFound
 from nexgddp.helpers.coloring_helper import ColoringHelper
@@ -27,15 +23,6 @@ from nexgddp.services.xml_service import XMLService
 nexgddp_endpoints = Blueprint('nexgddp_endpoints', __name__)
 
 app = Flask(__name__)
-
-cache_config = {
-    'CACHE_TYPE': 'redis',
-    'CACHE_KEY_PREFIX': 'nexgddp_queries',
-    'CACHE_REDIS_URL': SETTINGS.get('redis').get('url')
-}
-
-app.config.from_mapping(cache_config)
-cache = Cache(app)
 
 
 def callback_to_dataset(body):
@@ -195,66 +182,10 @@ def get_years(json_sql, temporal_resolution):
     return query_dates
 
 
-def make_cache_key(*args, **kwargs):
-    logging.debug("Making cache key")
-    request_json = request.get_json() or {}
-    sql = request.args.get('sql', None) or request_json.get('sql', None)
-    if not sql:
-        return None
-    logging.debug(f"Original sql statement: {sql}")
-    converted_sql = base64.b64encode(str.encode(str(sql)))
-    logging.debug(converted_sql)
-    args_items = dict(request.args)
-    logging.debug(f"args_items: {args_items}")
-    try:
-        del args_items["loggedUser"]
-    except KeyError as e:
-        pass
-    try:
-        del args_items["sql"]
-    except KeyError as e:
-        pass
-    args = str.encode(json.dumps(args_items, sort_keys=True))
-    converted_args = base64.b64encode(args)
-    logging.debug(f"args: {args}")
-    logging.debug(f"converted_args_ {converted_args}")
-    cache_key = str(converted_sql) + str(converted_args)
-    logging.debug(f"cache_key: {cache_key}")
-    return cache_key
-
-
-def unless_cache_query(*args, **kwargs):
-    logging.info("Checking if previous query failed")
-    if SETTINGS.get('redis').get('url') is None:
-        return True
-    cache_key = make_cache_key()
-    if cache_key is None:
-        return True
-    logging.debug(f"cache_key: {cache_key}")
-    # try:
-    res = cache.get(cache_key)
-    logging.debug(f"res: {res}")
-    if res is None:
-        status_code = None
-    else:
-        status_code = list(res)[-1]
-    logging.debug(status_code)
-    if status_code is None:
-        logging.debug("Query not present")
-        return False
-    elif status_code != 200:
-        logging.debug("Query failed")
-        return True
-    else:
-        logging.debug("Query succeeded")
-        return False
-
-
 @nexgddp_endpoints.route('/query/<dataset_id>', methods=['POST'])
 @get_dataset_from_id
 @get_bbox_by_hash
 @get_latlon
-@cache.cached(timeout=0, key_prefix=make_cache_key, unless=unless_cache_query)
 def query(dataset_id, bbox, dataset):
     """NEXGDDP QUERY ENDPOINT"""
     logging.info('[ROUTER] Doing Query of dataset ' + dataset_id)
