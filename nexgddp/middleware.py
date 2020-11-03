@@ -237,8 +237,8 @@ def get_dataset_from_id(func):
         if connector_type != "rest":
             return error(status=422, detail="This operation is only supported for datasets with connectorType 'rest'")
 
-        if provider != "nexgddp":
-            return error(status=422, detail="This operation is only supported for datasets with provider 'nexgddp'")
+        if provider != "nexgddp" and provider != "loca":
+            return error(status=422, detail="This operation is only supported for datasets with providers ['nexgddp', 'loca']")
 
         kwargs['dataset'] = dataset_object
 
