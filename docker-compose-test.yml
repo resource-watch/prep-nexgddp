@@ -13,5 +13,12 @@ services:
       CT_URL: http://mymachine:9000
       CT_REGISTER_MODE: "False"
       RASDAMAN_URL: http://rasdaman:9876/
+      REDIS_URL: redis://redis:6379
       GOOGLE_APPLICATION_CREDENTIALS: /opt/nexgddp/storage.json
     command: test
+    depends_on:
+      - redis
+
+  redis:
+    image: redis
+    restart: always
