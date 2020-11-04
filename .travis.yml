@@ -2,6 +2,8 @@ dist: bionic
 language: python
 python:
   - "3.6"
+services:
+  - redis-server
 addons:
   apt:
     packages:
@@ -21,6 +23,7 @@ env:
     - CPLUS_INCLUDE_PATH=/usr/include/gdal
     - C_INCLUDE_PATH=/usr/include/gdal
     - GOOGLE_APPLICATION_CREDENTIALS=./storage.json
+    - REDIS_URL=redis://localhost:6379
     - RASDAMAN_URL=http://rasdaman:9876/
 
 before_script:
