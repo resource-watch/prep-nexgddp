@@ -398,10 +398,11 @@ def get_tile(z, x, y, model, scenario, year, style, indicator, layer, compare_ye
     # return mask_response, 200
 
 
-@nexgddp_endpoints.route('/layer/<layer>/expire-cache', methods=['DELETE'])
+@nexgddp_endpoints.route('/layer/nexgddp/<layer>/expire-cache', methods=['DELETE'])
+@nexgddp_endpoints.route('/layer/loca/<layer>/expire-cache', methods=['DELETE'])
 @is_microservice
 def expire_cache(layer):
-    logging.info('[NEXGDDP-ROUTER] Expiring the tile cache')
+    logging.info('[NEXGDDP-ROUTER] Expiring the tile cache for nexgddp/loca layer')
     RedisService.expire_layer(layer)
     StorageService.delete_folder(layer)
     return jsonify({"result": 'OK'}), 200
