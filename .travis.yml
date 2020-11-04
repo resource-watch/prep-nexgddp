@@ -2,6 +2,8 @@ dist: bionic
 language: python
 python:
   - "3.6"
+services:
+  - redis-server
 addons:
   apt:
     packages:
@@ -22,6 +24,7 @@ env:
     - C_INCLUDE_PATH=/usr/include/gdal
     - GOOGLE_APPLICATION_CREDENTIALS=./storage.json
     - RASDAMAN_URL=http://rasdaman:9876/
+    - REDIS_URL=redis://localhost:6379
 
 before_script:
   - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
