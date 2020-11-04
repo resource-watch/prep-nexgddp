@@ -108,44 +108,22 @@
       }
     },
     {
-      "path": "/v1/layer/:layer/expire-cache",
+      "path": "/v1/layer/nexgddp/:layer/expire-cache",
       "method": "DELETE",
       "authenticated": true,
       "redirect": {
         "method": "DELETE",
-        "path": "/api/v1/nexgddp/layer/:layer/expire-cache"
-      },
-      "filters": [
-        {
-          "name": "layer",
-          "path": "/v1/layer/:layer",
-          "method": "GET",
-          "params": {
-            "layer": "layer"
-          },
-          "condition": "OR",
-          "compare": [
-            {
-              "data": {
-                "attributes": {
-                  "layerConfig": {
-                    "type": "nexgddp"
-                  }
-                }
-              }
-            },
-            {
-              "data": {
-                "attributes": {
-                  "layerConfig": {
-                    "type": "loca"
-                  }
-                }
-              }
-            }
-          ]
-        }
-      ]
+        "path": "/api/v1/nexgddp/layer/nexgddp/:layer/expire-cache"
+      }
+    },
+    {
+      "path": "/v1/layer/loca/:layer/expire-cache",
+      "method": "DELETE",
+      "authenticated": true,
+      "redirect": {
+        "method": "DELETE",
+        "path": "/api/v1/nexgddp/layer/loca/:layer/expire-cache"
+      }
     },
     {
       "path": "/v1/nexgddp/info/:indicator",
