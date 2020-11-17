@@ -1,9 +1,8 @@
-## 05/11/2020
+# v1.1.0
+
+## 17/11/2020
 
 - Remove filter dependency for `expire-cache` endpoint
-
-## 04/11/2020
-
 - Added tests for expire-cache endpoint
 
 # v1.0.0
