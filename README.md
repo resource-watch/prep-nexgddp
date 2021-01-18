@@ -1,7 +1,7 @@
 # PREP - NEXGDDP microservice
 
-[![Build Status](https://travis-ci.com/Vizzuality/prep-nexgddp.svg?branch=dev)](https://travis-ci.com/Vizzuality/prep-nexgddp)
-[![Test Coverage](https://api.codeclimate.com/v1/badges/95cbefa669563539f187/test_coverage)](https://codeclimate.com/github/Vizzuality/prep-nexgddp/test_coverage)
+[![Build Status](https://travis-ci.com/resource-watch/prep-nexgddp.svg?branch=dev)](https://travis-ci.com/resource-watch/prep-nexgddp)
+[![Test Coverage](https://api.codeclimate.com/v1/badges/b9bac026b8eb531a7e19/test_coverage)](https://codeclimate.com/github/resource-watch/prep-nexgddp/test_coverage)
 
 ## Dependencies
 
@@ -25,7 +25,7 @@ Follow the next steps to set up the development environment in your machine.
 1. Clone the repo and go to the folder
 
 ```ssh
-git clone https://github.com/Vizzuality/nex-gddp
+git clone https://github.com/resource-watch/prep-nexgddp.git
 cd nex-gddp
 ```
 
