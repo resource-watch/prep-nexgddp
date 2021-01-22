@@ -3,7 +3,7 @@
 import logging
 import os
 
-import CTRegisterMicroserviceFlask
+import RWAPIMicroservicePython
 from flask import Flask
 
 from nexgddp.config import SETTINGS
@@ -26,15 +26,17 @@ app.register_blueprint(nexgddp_endpoints, url_prefix='/api/v1/nexgddp')
 # CT
 info = load_config_json('register')
 swagger = load_config_json('swagger')
-CTRegisterMicroserviceFlask.register(
+RWAPIMicroservicePython.register(
     app=app,
     name='ps',
     info=info,
     swagger=swagger,
-    mode=CTRegisterMicroserviceFlask.AUTOREGISTER_MODE if os.getenv('CT_REGISTER_MODE') and os.getenv(
-        'CT_REGISTER_MODE') == 'auto' else CTRegisterMicroserviceFlask.NORMAL_MODE,
+    mode=RWAPIMicroservicePython.AUTOREGISTER_MODE if os.getenv('CT_REGISTER_MODE') and os.getenv(
+        'CT_REGISTER_MODE') == 'auto' else RWAPIMicroservicePython.NORMAL_MODE,
     ct_url=os.getenv('CT_URL'),
-    url=os.getenv('LOCAL_URL')
+    url=os.getenv('LOCAL_URL'),
+    token=os.getenv('CT_TOKEN'),
+    api_version=os.getenv('API_VERSION')
 )
 
 
