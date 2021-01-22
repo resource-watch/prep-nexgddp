@@ -6,7 +6,7 @@ import tempfile
 
 import dateutil.parser
 import dateutil.parser
-from CTRegisterMicroserviceFlask import request_to_microservice
+from RWAPIMicroservicePython import request_to_microservice
 from osgeo import gdal
 from requests import Request, Session
 from requests.exceptions import ConnectTimeout

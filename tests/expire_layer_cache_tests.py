@@ -1,4 +1,5 @@
 import json
+import os
 
 import pytest
 import requests_mock
@@ -84,22 +85,32 @@ def test_expire_layer_cache_anon(client, mocker):
 
 @requests_mock.Mocker(kw='mocker')
 def test_expire_layer_cache_as_admin(client, mocker):
+    get_user_data_calls = mocker.get(os.getenv('CT_URL') + '/auth/user/me', status_code=200, json=USERS['ADMIN'])
+    
     response = client.delete(
-        '/api/v1/nexgddp/layer/nexgddp/:layer/expire-cache?loggedUser={}'.format(json.dumps(USERS['ADMIN'])))
+        '/api/v1/nexgddp/layer/nexgddp/:layer/expire-cache', headers={'Authorization': 'Bearer abcd'})
     assert json.loads(response.data) == {'errors': [{'detail': 'Not authorized', 'status': 403}]}
     assert response.status_code == 403
+    assert get_user_data_calls.called
+    assert get_user_data_calls.call_count == 1
 
 
 @requests_mock.Mocker(kw='mocker')
 def test_expire_layer_cache_as_manager(client, mocker):
+    get_user_data_calls = mocker.get(os.getenv('CT_URL') + '/auth/user/me', status_code=200, json=USERS['MANAGER'])
+
     response = client.delete(
-        '/api/v1/nexgddp/layer/nexgddp/:layer/expire-cache?loggedUser={}'.format(json.dumps(USERS['MANAGER'])))
+        '/api/v1/nexgddp/layer/nexgddp/:layer/expire-cache', headers={'Authorization': 'Bearer abcd'})
     assert json.loads(response.data) == {'errors': [{'detail': 'Not authorized', 'status': 403}]}
     assert response.status_code == 403
+    assert get_user_data_calls.called
+    assert get_user_data_calls.call_count == 1
 
 
 @requests_mock.Mocker(kw='mocker')
 def test_expire_layer_cache_happy_case_for_empty_cache(client, mocker):
+    get_user_data_calls = mocker.get(os.getenv('CT_URL') + '/auth/user/me', status_code=200, json=USERS['MICROSERVICE'])
+
     mocker.post('https://accounts.google.com/o/oauth2/token', json={
         'access_token': 'TEST_GOOGLE_OAUTH2_ACCESS_TOKEN',
         'expires_in': 3599,
@@ -112,13 +123,17 @@ def test_expire_layer_cache_happy_case_for_empty_cache(client, mocker):
     mocker.get('https://www.googleapis.com/storage/v1/b/nexgddp-tiles/o?prefix=%3Alayer&projection=noAcl', json={})
 
     response = client.delete(
-        '/api/v1/nexgddp/layer/nexgddp/:layer/expire-cache?loggedUser={}'.format(json.dumps(USERS['MICROSERVICE'])))
+        '/api/v1/nexgddp/layer/nexgddp/:layer/expire-cache', headers={'Authorization': 'Bearer abcd'})
     assert json.loads(response.data) == {'result': 'OK'}
     assert response.status_code == 200
+    assert get_user_data_calls.called
+    assert get_user_data_calls.call_count == 1
 
 
 @requests_mock.Mocker(kw='mocker')
 def test_expire_nexgddp_layer_cache_happy_case(client, mocker):
+    get_user_data_calls = mocker.get(os.getenv('CT_URL') + '/auth/user/me', status_code=200, json=USERS['MICROSERVICE'])
+
     mocker.post('https://accounts.google.com/o/oauth2/token', json={
         'access_token': 'TEST_GOOGLE_OAUTH2_ACCESS_TOKEN',
         'expires_in': 3599,
@@ -177,13 +192,17 @@ def test_expire_nexgddp_layer_cache_happy_case(client, mocker):
     )
 
     response = client.delete(
-        '/api/v1/nexgddp/layer/nexgddp/:layer/expire-cache?loggedUser={}'.format(json.dumps(USERS['MICROSERVICE'])))
+        '/api/v1/nexgddp/layer/nexgddp/:layer/expire-cache', headers={'Authorization': 'Bearer abcd'})
     assert json.loads(response.data) == {'result': 'OK'}
     assert response.status_code == 200
+    assert get_user_data_calls.called
+    assert get_user_data_calls.call_count == 1
 
 
 @requests_mock.Mocker(kw='mocker')
 def test_expire_loca_layer_cache_happy_case(client, mocker):
+    get_user_data_calls = mocker.get(os.getenv('CT_URL') + '/auth/user/me', status_code=200, json=USERS['MICROSERVICE'])
+    
     mocker.post('https://accounts.google.com/o/oauth2/token', json={
         'access_token': 'TEST_GOOGLE_OAUTH2_ACCESS_TOKEN',
         'expires_in': 3599,
@@ -242,6 +261,8 @@ def test_expire_loca_layer_cache_happy_case(client, mocker):
     )
 
     response = client.delete(
-        '/api/v1/nexgddp/layer/loca/:layer/expire-cache?loggedUser={}'.format(json.dumps(USERS['MICROSERVICE'])))
+        '/api/v1/nexgddp/layer/loca/:layer/expire-cache', headers={'Authorization': 'Bearer abcd'})
     assert json.loads(response.data) == {'result': 'OK'}
     assert response.status_code == 200
+    assert get_user_data_calls.called
+    assert get_user_data_calls.call_count == 1
