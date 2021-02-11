@@ -77,7 +77,7 @@ spec:
                   name: dbsecrets
             - name: GOOGLE_APPLICATION_CREDENTIALS
               value: /opt/nexgddp/storage.json
-          image: vizzuality/nexgddp
+          image: gfwdockerhub/nexgddp
           imagePullPolicy: Always
           name: nexgddp
           ports:
