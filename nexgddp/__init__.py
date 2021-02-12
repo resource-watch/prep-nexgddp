@@ -28,7 +28,7 @@ info = load_config_json('register')
 swagger = load_config_json('swagger')
 RWAPIMicroservicePython.register(
     app=app,
-    name='ps',
+    name='nexgddp',
     info=info,
     swagger=swagger,
     mode=RWAPIMicroservicePython.AUTOREGISTER_MODE if os.getenv('CT_REGISTER_MODE') and os.getenv(

@@ -110,7 +110,6 @@
     {
       "path": "/v1/layer/nexgddp/:layer/expire-cache",
       "method": "DELETE",
-      "authenticated": true,
       "redirect": {
         "method": "DELETE",
         "path": "/api/v1/nexgddp/layer/nexgddp/:layer/expire-cache"
@@ -119,7 +118,6 @@
     {
       "path": "/v1/layer/loca/:layer/expire-cache",
       "method": "DELETE",
-      "authenticated": true,
       "redirect": {
         "method": "DELETE",
         "path": "/api/v1/nexgddp/layer/loca/:layer/expire-cache"
