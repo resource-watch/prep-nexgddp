@@ -1,3 +1,7 @@
+## 01/04/2021
+
+- Modify API HTTP verbs to match public API method signature.
+
 ## 06/03/2021
 
 - Update `RWAPIMicroservicePython` to fix issue with requests to other microservices.
