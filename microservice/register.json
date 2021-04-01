@@ -12,7 +12,7 @@
       "method": "GET",
       "binary": true,
       "redirect": {
-        "method": "POST",
+        "method": "GET",
         "path": "/api/v1/nexgddp/query/:dataset"
       }
     },
@@ -29,7 +29,7 @@
       "path": "/v1/fields/nexgddp/:dataset",
       "method": "GET",
       "redirect": {
-        "method": "POST",
+        "method": "GET",
         "path": "/api/v1/nexgddp/fields/:dataset"
       }
     },
@@ -38,7 +38,7 @@
       "method": "GET",
       "binary": true,
       "redirect": {
-        "method": "POST",
+        "method": "GET",
         "path": "/api/v1/nexgddp/query/:dataset"
       }
     },
@@ -55,7 +55,7 @@
       "path": "/v1/fields/loca/:dataset",
       "method": "GET",
       "redirect": {
-        "method": "POST",
+        "method": "GET",
         "path": "/api/v1/nexgddp/fields/:dataset"
       }
     },

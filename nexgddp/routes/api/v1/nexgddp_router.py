@@ -182,7 +182,7 @@ def get_years(json_sql, temporal_resolution):
     return query_dates
 
 
-@nexgddp_endpoints.route('/query/<dataset_id>', methods=['POST'])
+@nexgddp_endpoints.route('/query/<dataset_id>', methods=['GET', 'POST'])
 @get_dataset_from_id
 @get_bbox_by_hash
 @get_latlon
@@ -293,7 +293,7 @@ def query(dataset_id, bbox, dataset):
     return jsonify(data=output), 200
 
 
-@nexgddp_endpoints.route('/fields/<dataset_id>', methods=['POST'])
+@nexgddp_endpoints.route('/fields/<dataset_id>', methods=['GET', 'POST'])
 @get_dataset_from_id
 def get_fields(dataset_id, dataset):
     """NEXGDDP FIELDS ENDPOINT"""

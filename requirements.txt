@@ -1,5 +1,5 @@
-Flask==1.1.2
-RWAPIMicroservicePython==0.2.0
+Flask==1.1.1
+RWAPIMicroservicePython==0.3.0
 requests==2.18.4
 httmock==1.2.6
 python-dateutil==2.6.1
