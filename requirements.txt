@@ -9,7 +9,7 @@ opencv-python==3.4.0.12
 colour==0.1.1
 redis==2.10.6
 google-cloud==0.27
-urllib3==1.22
+urllib3==1.26.5
 numpy==1.16.5
 matplotlib==2.1.1
 werkzeug==0.16.1
