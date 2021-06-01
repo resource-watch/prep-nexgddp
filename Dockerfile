@@ -1,4 +1,4 @@
-FROM python:3.6.2-stretch
+FROM python:3.6.13-stretch
 MAINTAINER info@vizzuality.com
 
 ENV NAME nexgddp
@@ -27,12 +27,12 @@ ENV C_INCLUDE_PATH /usr/include/gdal
 
 RUN groupadd $USER && useradd -g $USER $USER -s /bin/bash
 
-RUN easy_install pip && pip install --upgrade pip
-RUN pip install virtualenv gunicorn gevent numpy
-RUN pip install --global-option=build_ext --global-option="-I/usr/include/gdal" GDAL==2.1.3
-
 RUN mkdir -p /opt/$NAME
-RUN cd /opt/$NAME && virtualenv venv && /bin/bash -c "source venv/bin/activate"
+RUN cd /opt/$NAME
+
+RUN pip install --upgrade pip
+RUN pip install gunicorn gevent numpy
+RUN pip install --global-option=build_ext --global-option="-I/usr/include/gdal" GDAL==2.1.3
 
 WORKDIR /opt/$NAME
 

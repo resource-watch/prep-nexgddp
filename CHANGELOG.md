@@ -1,3 +1,7 @@
+## 31/05/2021
+
+- Update `RWAPIMicroservicePython` to add CORS support.
+
 ## 01/04/2021
 
 - Modify API HTTP verbs to match public API method signature.
