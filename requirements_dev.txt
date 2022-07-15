@@ -1,6 +1,6 @@
 pytest==5.2.0
 pytest-cov==2.7.1
 pytest-mock==3.3.1
-codecov==2.0.15
+codecov==2.0.16
 requests-mock==1.8.0
 gdal==2.1.3
