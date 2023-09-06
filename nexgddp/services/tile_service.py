@@ -1,8 +1,6 @@
 import mercantile
 
 
-# from pyproj import Proj, transform
-
 class TileService(object):
     @staticmethod
     def get_bbox(x, y, z):
