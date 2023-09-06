@@ -1,86 +1,22 @@
 import json
 import os
 
-import pytest
 import requests_mock
 from RWAPIMicroservicePython.test_utils import mock_request_validation
 
-import nexgddp
-
-USERS = {
-    "ADMIN": {
-        "id": '1a10d7c6e0a37126611fd7a7',
-        "role": 'ADMIN',
-        "provider": 'local',
-        "email": 'user@control-tower.org',
-        "name": 'John Admin',
-        "extraUserData": {
-            "apps": [
-                'rw',
-                'gfw',
-                'gfw-climate',
-                'prep',
-                'aqueduct',
-                'forest-atlas',
-                'data4sdgs'
-            ]
-        }
-    },
-    "MANAGER": {
-        "id": '1a10d7c6e0a37126611fd7a7',
-        "role": 'MANAGER',
-        "name": 'John Manager',
-        "provider": 'local',
-        "email": 'user@control-tower.org',
-        "extraUserData": {
-            "apps": [
-                'rw',
-                'gfw',
-                'gfw-climate',
-                'prep',
-                'aqueduct',
-                'forest-atlas',
-                'data4sdgs'
-            ]
-        }
-    },
-    "USER": {
-        "id": '1a10d7c6e0a37126611fd7a7',
-        "role": 'USER',
-        "provider": 'local',
-        "email": 'user@control-tower.org',
-        "extraUserData": {
-            "apps": [
-                'rw',
-                'gfw',
-                'gfw-climate',
-                'prep',
-                'aqueduct',
-                'forest-atlas',
-                'data4sdgs'
-            ]
-        }
-    },
-    "MICROSERVICE": {
-        "id": "microservice",
-        "createdAt": "2016-09-14"
-    }
-}
-
-
-@pytest.fixture
-def client():
-    app = nexgddp.app
-    app.config['TESTING'] = True
-    client = app.test_client()
-
-    yield client
+from tests.fixtures import USERS
 
 
 @requests_mock.Mocker(kw='mocker')
 def test_expire_layer_cache_anon(client, mocker):
+    mock_request_validation(
+            mocker,
+            microservice_token=os.getenv("MICROSERVICE_TOKEN"),
+        )
     response = client.delete(
-        '/api/v1/nexgddp/layer/nexgddp/:layer/expire-cache')
+        '/api/v1/nexgddp/layer/nexgddp/:layer/expire-cache',
+        headers={'x-api-key': 'api-key-test'}
+    )
     assert json.loads(response.data) == {'errors': [{'detail': 'Not authorized', 'status': 403}]}
     assert response.status_code == 403
 
@@ -94,7 +30,9 @@ def test_expire_layer_cache_as_admin(client, mocker):
     )
 
     response = client.delete(
-        '/api/v1/nexgddp/layer/nexgddp/:layer/expire-cache', headers={'Authorization': 'Bearer abcd'})
+        '/api/v1/nexgddp/layer/nexgddp/:layer/expire-cache',
+        headers={'Authorization': 'Bearer abcd', 'x-api-key': 'api-key-test'}
+    )
     assert json.loads(response.data) == {'errors': [{'detail': 'Not authorized', 'status': 403}]}
     assert response.status_code == 403
     assert get_user_data_calls.called
@@ -110,7 +48,9 @@ def test_expire_layer_cache_as_manager(client, mocker):
     )
 
     response = client.delete(
-        '/api/v1/nexgddp/layer/nexgddp/:layer/expire-cache', headers={'Authorization': 'Bearer abcd'})
+        '/api/v1/nexgddp/layer/nexgddp/:layer/expire-cache',
+        headers={'Authorization': 'Bearer abcd', 'x-api-key': 'api-key-test'}
+    )
     assert json.loads(response.data) == {'errors': [{'detail': 'Not authorized', 'status': 403}]}
     assert response.status_code == 403
     assert get_user_data_calls.called
@@ -137,7 +77,9 @@ def test_expire_layer_cache_happy_case_for_empty_cache(client, mocker):
     mocker.get('https://www.googleapis.com/storage/v1/b/nexgddp-tiles/o?prefix=%3Alayer&projection=noAcl', json={})
 
     response = client.delete(
-        '/api/v1/nexgddp/layer/nexgddp/:layer/expire-cache', headers={'Authorization': 'Bearer abcd'})
+        '/api/v1/nexgddp/layer/nexgddp/:layer/expire-cache',
+        headers={'Authorization': 'Bearer abcd', 'x-api-key': 'api-key-test'}
+    )
     assert json.loads(response.data) == {'result': 'OK'}
     assert response.status_code == 200
     assert get_user_data_calls.called
@@ -210,7 +152,9 @@ def test_expire_nexgddp_layer_cache_happy_case(client, mocker):
     )
 
     response = client.delete(
-        '/api/v1/nexgddp/layer/nexgddp/:layer/expire-cache', headers={'Authorization': 'Bearer abcd'})
+        '/api/v1/nexgddp/layer/nexgddp/:layer/expire-cache',
+        headers={'Authorization': 'Bearer abcd', 'x-api-key': 'api-key-test'}
+    )
     assert json.loads(response.data) == {'result': 'OK'}
     assert response.status_code == 200
     assert get_user_data_calls.called
@@ -283,7 +227,9 @@ def test_expire_loca_layer_cache_happy_case(client, mocker):
     )
 
     response = client.delete(
-        '/api/v1/nexgddp/layer/loca/:layer/expire-cache', headers={'Authorization': 'Bearer abcd'})
+        '/api/v1/nexgddp/layer/loca/:layer/expire-cache',
+        headers={'Authorization': 'Bearer abcd', 'x-api-key': 'api-key-test'}
+    )
     assert json.loads(response.data) == {'result': 'OK'}
     assert response.status_code == 200
     assert get_user_data_calls.called

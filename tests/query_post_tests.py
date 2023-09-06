@@ -2,6 +2,7 @@ import os
 from pathlib import Path
 
 import requests_mock
+from RWAPIMicroservicePython.test_utils import mock_request_validation
 
 from tests.mocks import mock_get_dataset
 from tests.fixtures import (
@@ -19,7 +20,11 @@ def test_query_dataset_that_does_not_exist(client, mocker):
         status_code=404,
         response_json={"errors": [{"status": 404, "detail": "Dataset with id 'bar' doesn't exist"}]}
     )
-    response = client.post('/api/v1/nexgddp/query/bar')
+    mock_request_validation(mocker, microservice_token=os.getenv("MICROSERVICE_TOKEN"))
+
+    response = client.post(
+        '/api/v1/nexgddp/query/bar', headers={'x-api-key': 'api-key-test'}
+    )
     assert response.status_code == 404
     assert response.data == b'{"errors":[{"detail":"Dataset with id bar doesn\'t exist","status":404}]}\n'
 
@@ -27,8 +32,11 @@ def test_query_dataset_that_does_not_exist(client, mocker):
 @requests_mock.Mocker(kw='mocker')
 def test_query_dataset_invalid_provider(client, mocker):
     mock_get_dataset(mocker, dataset_invalid_provider)
+    mock_request_validation(mocker, microservice_token=os.getenv("MICROSERVICE_TOKEN"))
 
-    response = client.post('/api/v1/nexgddp/query/bar')
+    response = client.post(
+        '/api/v1/nexgddp/query/bar', headers={'x-api-key': 'api-key-test'}
+    )
     assert response.status_code == 422
     assert response.data == b'{"errors":[{"detail":"This operation is only supported for datasets with providers [\'nexgddp\', \'loca\']","status":422}]}\n'
 
@@ -36,8 +44,11 @@ def test_query_dataset_invalid_provider(client, mocker):
 @requests_mock.Mocker(kw='mocker')
 def test_query_dataset_invalid_connector_type(client, mocker):
     mock_get_dataset(mocker, dataset_invalid_connector_type)
+    mock_request_validation(mocker, microservice_token=os.getenv("MICROSERVICE_TOKEN"))
 
-    response = client.post('/api/v1/nexgddp/query/bar')
+    response = client.post(
+        '/api/v1/nexgddp/query/bar', headers={'x-api-key': 'api-key-test'}
+    )
     assert response.status_code == 422
     assert response.data == b'{"errors":[{"detail":"This operation is only supported for datasets with connectorType \'rest\'","status":422}]}\n'
 
@@ -45,8 +56,11 @@ def test_query_dataset_invalid_connector_type(client, mocker):
 @requests_mock.Mocker(kw='mocker')
 def test_query_dataset_no_query(client, mocker):
     mock_get_dataset(mocker, dataset_nexgddp_json)
+    mock_request_validation(mocker, microservice_token=os.getenv("MICROSERVICE_TOKEN"))
 
-    response = client.post('/api/v1/nexgddp/query/bar', json={})
+    response = client.post(
+        '/api/v1/nexgddp/query/bar', json={}, headers={'x-api-key': 'api-key-test'}
+    )
 
     assert response.status_code == 400
     assert response.data == b'{"errors":[{"detail":"sql must be provided","status":400}]}\n'
@@ -130,6 +144,7 @@ def test_query_dataset_happy_case_nexgddp(client, mocker):
     }
 
     mock_get_dataset(mocker, dataset_nexgddp_json)
+    mock_request_validation(mocker, microservice_token=os.getenv("MICROSERVICE_TOKEN"))
 
     rasdaman_response_file = Path("tests/assets/get_fields_response.xml")
     with open(rasdaman_response_file, encoding='utf-8') as f:
@@ -159,7 +174,8 @@ def test_query_dataset_happy_case_nexgddp(client, mocker):
             '/api/v1/nexgddp/query/bar?geostore=46e0617e8d2000bd3c36e9e92bb5a35b',
             json={
                 'sql': 'select%20%2A%20from%20data'
-            }
+            },
+            headers={'x-api-key': 'api-key-test'}
         )
 
         assert response.status_code == 200
@@ -244,6 +260,7 @@ def test_query_dataset_happy_case_loca(client, mocker):
     }
 
     mock_get_dataset(mocker, dataset_loca_json)
+    mock_request_validation(mocker, microservice_token=os.getenv("MICROSERVICE_TOKEN"))
 
     rasdaman_response_file = Path("tests/assets/get_fields_response.xml")
     with open(rasdaman_response_file, encoding='utf-8') as f:
@@ -273,7 +290,8 @@ def test_query_dataset_happy_case_loca(client, mocker):
             '/api/v1/nexgddp/query/bar?geostore=46e0617e8d2000bd3c36e9e92bb5a35b',
             json={
                 'sql': 'select%20%2A%20from%20data'
-            }
+            },
+            headers={'x-api-key': 'api-key-test'}
         )
 
         assert response.status_code == 200

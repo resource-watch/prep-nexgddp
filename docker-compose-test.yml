@@ -15,9 +15,9 @@ services:
       REDIS_URL: redis://redis:6379
       GOOGLE_APPLICATION_CREDENTIALS: /opt/nexgddp/storage.json
       AWS_REGION: "us-east-1"
-      REQUIRE_API_KEY: "False"
+      REQUIRE_API_KEY: "True"
       GCLOUD_STORAGE: "$GCLOUD_STORAGE"
-      AWS_CLOUD_WATCH_LOGGING_ENABLED: "False"
+      AWS_CLOUD_WATCH_LOGGING_ENABLED: "True"
     command: test
     depends_on:
       - redis
