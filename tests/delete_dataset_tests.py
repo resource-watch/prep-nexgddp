@@ -3,6 +3,7 @@ import json
 
 import pytest
 import requests_mock
+from RWAPIMicroservicePython.test_utils import mock_request_validation
 
 import nexgddp
 
@@ -29,6 +30,7 @@ USERS = {
         "id": '1a10d7c6e0a37126611fd7a7',
         "role": 'MANAGER',
         "provider": 'local',
+        "name": "John Manager",
         "email": 'user@control-tower.org',
         "extraUserData": {
             "apps": [
@@ -45,6 +47,7 @@ USERS = {
     "USER": {
         "id": '1a10d7c6e0a37126611fd7a7',
         "role": 'USER',
+        "name": 'John User',
         "provider": 'local',
         "email": 'user@control-tower.org',
         "extraUserData": {
@@ -77,8 +80,12 @@ def client():
 
 @requests_mock.Mocker(kw='mocker')
 def test_delete_dataset_as_microservice(client, mocker):
-    get_user_data_calls = mocker.get(os.getenv('CT_URL') + '/auth/user/me', status_code=200, json=USERS['MICROSERVICE'])
-    
+    get_user_data_calls = mock_request_validation(
+        mocker,
+        microservice_token=os.getenv("MICROSERVICE_TOKEN"),
+        user=USERS["MICROSERVICE"]
+    )
+
     response = client.delete(
         '/api/v1/nexgddp/rest-datasets/nexgddp/:dataset', headers={'Authorization': 'Bearer abcd'})
     assert response.data == b''
@@ -89,7 +96,11 @@ def test_delete_dataset_as_microservice(client, mocker):
 
 @requests_mock.Mocker(kw='mocker')
 def test_delete_dataset_as_admin(client, mocker):
-    get_user_data_calls = mocker.get(os.getenv('CT_URL') + '/auth/user/me', status_code=200, json=USERS['ADMIN'])
+    get_user_data_calls = mock_request_validation(
+        mocker,
+        microservice_token=os.getenv("MICROSERVICE_TOKEN"),
+        user=USERS["ADMIN"]
+    )
 
     response = client.delete(
         '/api/v1/nexgddp/rest-datasets/nexgddp/:dataset', headers={'Authorization': 'Bearer abcd'})
@@ -101,7 +112,11 @@ def test_delete_dataset_as_admin(client, mocker):
 
 @requests_mock.Mocker(kw='mocker')
 def test_delete_dataset_as_manager(client, mocker):
-    get_user_data_calls = mocker.get(os.getenv('CT_URL') + '/auth/user/me', status_code=200, json=USERS['MANAGER'])
+    get_user_data_calls = mock_request_validation(
+        mocker,
+        microservice_token=os.getenv("MICROSERVICE_TOKEN"),
+        user=USERS["MANAGER"]
+    )
 
     response = client.delete(
         '/api/v1/nexgddp/rest-datasets/nexgddp/:dataset', headers={'Authorization': 'Bearer abcd'})
