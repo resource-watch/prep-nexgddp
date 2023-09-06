@@ -40,20 +40,15 @@ spec:
               value: staging
             - name: LOCAL_URL
               value: http://nexgddp.prep.svc.cluster.local:3078
-            - name: CT_URL
+            - name: GATEWAY_URL
               valueFrom:
                 secretKeyRef:
-                  key: CT_URL
+                  key: GATEWAY_URL
                   name: mssecrets
-            - name: CT_TOKEN
+            - name: MICROSERVICE_TOKEN
               valueFrom:
                 secretKeyRef:
-                  key: CT_TOKEN
-                  name: mssecrets
-            - name: CT_REGISTER_MODE
-              valueFrom:
-                secretKeyRef:
-                  key: CT_REGISTER_MODE
+                  key: MICROSERVICE_TOKEN
                   name: mssecrets
             - name: API_VERSION
               valueFrom:
@@ -77,6 +72,16 @@ spec:
                   name: dbsecrets
             - name: GOOGLE_APPLICATION_CREDENTIALS
               value: /opt/nexgddp/storage.json
+            - name: AWS_REGION
+              valueFrom:
+                secretKeyRef:
+                  key: AWS_REGION
+                  name: mssecrets
+            - name: REQUIRE_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  key: REQUIRE_API_KEY
+                  name: mssecrets
           image: gfwdockerhub/nexgddp
           imagePullPolicy: Always
           name: nexgddp
