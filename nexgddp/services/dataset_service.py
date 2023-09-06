@@ -8,8 +8,8 @@ from nexgddp.errors import DatasetNotFound
 class DatasetService(object):
 
     @staticmethod
-    def execute(config):
-        response = request_to_microservice(config)
+    def execute(uri):
+        response = request_to_microservice(uri=uri, method="GET", api_key="")
         if not response or response.get('errors'):
             raise DatasetNotFound(message='Dataset not found')
         dataset = response.get('data', None).get('attributes', None)
@@ -17,8 +17,4 @@ class DatasetService(object):
 
     @staticmethod
     def get(dataset):
-        config = {
-            'uri': '/dataset/' + dataset,
-            'method': 'GET'
-        }
-        return DatasetService.execute(config)
+        return DatasetService.execute(uri=f"/v1/dataset/{dataset}")

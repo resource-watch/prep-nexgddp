@@ -28,15 +28,14 @@ info = load_config_json('register')
 swagger = load_config_json('swagger')
 RWAPIMicroservicePython.register(
     app=app,
-    name='nexgddp',
-    info=info,
-    swagger=swagger,
-    mode=RWAPIMicroservicePython.AUTOREGISTER_MODE if os.getenv('CT_REGISTER_MODE') and os.getenv(
-        'CT_REGISTER_MODE') == 'auto' else RWAPIMicroservicePython.NORMAL_MODE,
-    ct_url=os.getenv('CT_URL'),
-    url=os.getenv('LOCAL_URL'),
-    token=os.getenv('CT_TOKEN'),
-    api_version=os.getenv('API_VERSION')
+    gateway_url=os.getenv("GATEWAY_URL"),
+    token=os.getenv("MICROSERVICE_TOKEN"),
+    aws_cloud_watch_logging_enabled=(
+        os.getenv("AWS_CLOUD_WATCH_LOGGING_ENABLED", "True").lower() == "true"
+    ),
+    aws_cloud_watch_log_stream_name=SETTINGS.get("service", {}).get("name"),
+    aws_region=os.getenv("AWS_REGION"),
+    require_api_key=(os.getenv("REQUIRE_API_KEY", "False").lower() == "true"),
 )
 
 

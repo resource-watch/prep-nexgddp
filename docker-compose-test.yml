@@ -8,13 +8,16 @@ services:
     environment:
       PORT: 3078
       DEBUG: "True"
-      CT_TOKEN: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjU4MjBhZDk0NjlhMDI4Nzk4MmY0Y2QxOCIsInByb3ZpZGVyIjoibG9jYWwiLCJwcm92aWRlcklkIjpudWxsLCJlbWFpbCI6InNlcmdpby5nb3JkaWxsb0B2aXp6dWFsaXR5LmNvbSIsInJvbGUiOiJBRE1JTiIsImNyZWF0ZWRBdCI6IjIwMTYtMTEtMDdUMTY6MzY6MzYuODY4WiIsImV4dHJhVXNlckRhdGEiOnsiYXBwcyI6WyJnZnciLCJwcmVwIiwiYXF1ZWR1Y3QiLCJmb3Jlc3QtYXRsYXMiLCJydyIsImRhdGE0c2RnIl19fQ.3GzuhG8wD4gI5Fo6NTqHC_Dq6ChKPPWXygga2mAuKZw
+      MICROSERVICE_TOKEN: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjU4MjBhZDk0NjlhMDI4Nzk4MmY0Y2QxOCIsInByb3ZpZGVyIjoibG9jYWwiLCJwcm92aWRlcklkIjpudWxsLCJlbWFpbCI6InNlcmdpby5nb3JkaWxsb0B2aXp6dWFsaXR5LmNvbSIsInJvbGUiOiJBRE1JTiIsImNyZWF0ZWRBdCI6IjIwMTYtMTEtMDdUMTY6MzY6MzYuODY4WiIsImV4dHJhVXNlckRhdGEiOnsiYXBwcyI6WyJnZnciLCJwcmVwIiwiYXF1ZWR1Y3QiLCJmb3Jlc3QtYXRsYXMiLCJydyIsImRhdGE0c2RnIl19fQ.3GzuhG8wD4gI5Fo6NTqHC_Dq6ChKPPWXygga2mAuKZw
       API_VERSION: v1
-      CT_URL: http://mymachine:9000
-      CT_REGISTER_MODE: "False"
+      GATEWAY_URL: http://mymachine:9000
       RASDAMAN_URL: http://rasdaman:9876/
       REDIS_URL: redis://redis:6379
       GOOGLE_APPLICATION_CREDENTIALS: /opt/nexgddp/storage.json
+      AWS_REGION: "us-east-1"
+      REQUIRE_API_KEY: "False"
+      GCLOUD_STORAGE: "$GCLOUD_STORAGE"
+      AWS_CLOUD_WATCH_LOGGING_ENABLED: "False"
     command: test
     depends_on:
       - redis

@@ -8,8 +8,8 @@ from nexgddp.errors import LayerNotFound
 class LayerService(object):
 
     @staticmethod
-    def execute(config):
-        response = request_to_microservice(config)
+    def execute(uri):
+        response = request_to_microservice(uri=uri, method="GET", api_key='')
         if not response or response.get('errors'):
             raise LayerNotFound(message='Layer not found')
         layer = response.get('data', None).get('attributes', None)
@@ -17,8 +17,4 @@ class LayerService(object):
 
     @staticmethod
     def get(layer):
-        config = {
-            'uri': '/layer/' + layer,
-            'method': 'GET'
-        }
-        return LayerService.execute(config)
+        return LayerService.execute(uri=f"/v1/layer/{layer}")

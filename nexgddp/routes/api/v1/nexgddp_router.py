@@ -31,7 +31,7 @@ def callback_to_dataset(body):
         'method': 'PATCH',
         'body': body
     }
-    return request_to_microservice(config)
+    return request_to_microservice(**config, api_key="")
 
 
 def get_sql_select(json_sql):
@@ -195,8 +195,10 @@ def query(dataset_id, bbox, dataset):
     logging.debug(f"temporal_resolution: {temporal_resolution}")
     scenario, model = table_name.rsplit('/')
 
-    request_json = request.get_json() or {}
-    sql = request.args.get('sql', None) or request_json.get('sql', None)
+    if request.method == "POST":
+        sql = request.get_json().get("sql", None)
+    else:
+        sql = request.args.get('sql', None)
 
     if not sql:
         return error(status=400, detail='sql must be provided')
@@ -556,11 +558,11 @@ def getLocaInfoIndicator(indicator):
 @nexgddp_endpoints.route('/dataset/<indicator>/<scenario>/<temporal_res>', methods=['GET'])
 def getDataset(indicator, scenario, temporal_res):
     logging.info('[NEXGDDP-ROUTER] Get info of indicator')
-    datasets = request_to_microservice({
-        'uri': '/dataset?includes=layer&tableName=' + indicator + '/' + scenario + '_' + temporal_res + '&env=' + request.args.get(
+    datasets = request_to_microservice(**{
+        'uri': '/v1/dataset?includes=layer&tableName=' + indicator + '/' + scenario + '_' + temporal_res + '&env=' + request.args.get(
             "env", 'production'),
         'method': 'GET'
-    })
+    }, api_key='')
     if datasets.get('data') and len(datasets.get('data')) > 0:
         return jsonify({"data": datasets.get('data')[0]}), 200
     return jsonify({"errors": [{
@@ -572,11 +574,11 @@ def getDataset(indicator, scenario, temporal_res):
 @nexgddp_endpoints.route('/locadataset/<indicator>/<scenario>/<temporal_res>', methods=['GET'])
 def getLocaDataset(indicator, scenario, temporal_res):
     logging.info('[NEXGDDP-ROUTER] Get info of indicator')
-    datasets = request_to_microservice({
-        'uri': '/dataset?includes=layer&tableName=loca_' + indicator + '/' + scenario + '_' + temporal_res + '&env=' + request.args.get(
+    datasets = request_to_microservice(**{
+        'uri': '/v1/dataset?includes=layer&tableName=loca_' + indicator + '/' + scenario + '_' + temporal_res + '&env=' + request.args.get(
             "env", 'production'),
         'method': 'GET'
-    })
+    }, api_key='')
     if datasets.get('data') and len(datasets.get('data')) > 0:
         return jsonify({"data": datasets.get('data')[0]}), 200
     return jsonify({"errors": [{
