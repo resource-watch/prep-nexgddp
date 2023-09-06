@@ -7,19 +7,14 @@ import tempfile
 import dateutil.parser
 import dateutil.parser
 from RWAPIMicroservicePython import request_to_microservice
-from osgeo import gdal
 from requests import Request, Session
 from requests.exceptions import ConnectTimeout
 
 from nexgddp.errors import SqlFormatError, PeriodNotValid, TableNameNotValid, GeostoreNeeded, RasdamanError
 from nexgddp.helpers.coloring_helper import ColoringHelper
-from nexgddp.helpers.gdal_helper import GdalHelper
 from nexgddp.services.xml_service import XMLService
 
 RASDAMAN_URL = os.getenv('RASDAMAN_URL')
-
-# Allows gdal to use exceptions
-gdal.UseExceptions()
 
 
 class QueryService(object):
@@ -50,29 +45,7 @@ class QueryService(object):
         return map(float, processed_data)
         return results
 
-    @staticmethod
-    def get_histogram(scenario, model, years, indicator, bbox):
-        logging.info('[QueryService] Getting histogram from rasdaman')
-        results = []
 
-        for year in years:
-            if bbox == []:
-                bbox_str = ""
-            else:
-                bbox_str = f",Lat({bbox[0]}:{bbox[2]}),Long({bbox[1]}:{bbox[3]})"
-            query = f"for cov in ({scenario}_{model}_processed) return encode( (cov.{indicator})[ ansi(\"{year}\") {bbox_str}], \"GTiff\")"
-            logging.info('Running the query ' + query)
-            raster_filename = QueryService.get_rasdaman_query(query)
-            try:
-                source_raster = gdal.Open(raster_filename)
-                all_results = GdalHelper.calc_histogram(source_raster)
-                all_results["year"] = year
-                results.append(all_results)
-            finally:
-                source_raster = None
-                # Removing the raster
-                os.remove(os.path.join('/tmp', raster_filename))
-        return results
 
     @staticmethod
     def get_temporal_series(scenario, model, years, indicator, bbox):
