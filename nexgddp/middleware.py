@@ -24,7 +24,9 @@ def get_bbox_by_hash(func):
             bbox = []
         else:
             try:
-                _, bbox = GeostoreService.get(geostore)
+                _, bbox = GeostoreService.get(
+                    geostore, request.headers.get('x-api-key')
+                )
             except GeostoreNotFound:
                 return error(status=404, detail='Geostore not found')
 
@@ -98,7 +100,8 @@ def get_tile_attrs(func):
         kwargs["indicator"] = indicator
 
         logging.debug('Obtaining scenario and model')
-        dataset_object = DatasetService.get(dataset)
+        api_key = request.headers.get('x-api-key')
+        dataset_object = DatasetService.get(dataset, api_key)
         tablename = dataset_object.get('tableName', None)
         logging.debug(f'tablename: {tablename}')
         kwargs['model'] = tablename.split('/')[1]
@@ -112,7 +115,7 @@ def get_tile_attrs(func):
             logging.debug(f"compare_year: {compare_year}")
             dataset_b_id = request.args.get('compareTo', None)
             if dataset_b_id:
-                dataset_b_object = DatasetService.get(dataset_b_id)
+                dataset_b_object = DatasetService.get(dataset_b_id, api_key)
                 tablename_b = '_'.join(dataset_b_object.get('tableName', None).split('/')) + '_processed'
                 kwargs["dset_b"] = tablename_b
                 logging.debug(f"tablename_b: {tablename_b}")
@@ -134,15 +137,16 @@ def get_diff_attrs(func):
     def wrapper(*args, **kwargs):
         req_body = request.get_json(force=True)
         logging.debug(req_body)
+        api_key = request.headers.get('x-api-key')
         dset_a = request.get_json().get('dset_a')
-        dataset_object_a = DatasetService.get(dset_a)
+        dataset_object_a = DatasetService.get(dset_a, api_key)
         tablename_a = '_'.join(dataset_object_a.get('tableName').split('/')) + '_processed'
         logging.debug(tablename_a)
         kwargs["dset_a"] = tablename_a
 
         dset_b = request.get_json().get('dset_b')
         if dset_b:
-            dataset_object_b = DatasetService.get(dset_b)
+            dataset_object_b = DatasetService.get(dset_b, api_key)
             tablename_b = '_'.join(dataset_object_b.get('tableName').split('/')) + '_processed'
             logging.debug(tablename_b)
             kwargs["dset_b"] = tablename_b
@@ -181,7 +185,7 @@ def get_layer(func):
         layer = request.view_args.get('layer', None)
         logging.debug(f'layer: {layer}')
         try:
-            layer_object = LayerService.get(layer)
+            layer_object = LayerService.get(layer, request.headers.get('x-api-key'))
         except LayerNotFound as e:
             return error(status=404, detail='Layer not found')
         logging.debug(f'layer_object: {layer_object}')
@@ -227,7 +231,9 @@ def get_dataset_from_id(func):
         logging.debug("Getting dataset from id")
 
         try:
-            dataset_object = DatasetService.get(kwargs['dataset_id'])
+            dataset_object = DatasetService.get(
+                kwargs['dataset_id'], request.headers.get('x-api-key')
+            )
         except DatasetNotFound:
             return error(status=404, detail="Dataset with id {} doesn't exist".format(kwargs['dataset_id']))
 

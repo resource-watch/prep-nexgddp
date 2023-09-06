@@ -25,13 +25,13 @@ nexgddp_endpoints = Blueprint('nexgddp_endpoints', __name__)
 app = Flask(__name__)
 
 
-def callback_to_dataset(body):
-    config = {
-        'uri': '/dataset/' + request.get_json().get('connector').get('id'),
-        'method': 'PATCH',
-        'body': body
-    }
-    return request_to_microservice(**config, api_key="")
+def callback_to_dataset(body, api_key):
+    return request_to_microservice(
+        uri=f'/v1/dataset/{request.get_json().get("connector").get("id")}',
+        method='PATCH',
+        body=body,
+        api_key=api_key
+    )
 
 
 def get_sql_select(json_sql):
@@ -204,7 +204,7 @@ def query(dataset_id, bbox, dataset):
         return error(status=400, detail='sql must be provided')
     # convert
     try:
-        _, json_sql = QueryService.convert(sql)
+        _, json_sql = QueryService.convert(sql, api_key=request.headers.get('x-api-key'))
     except SqlFormatError as e:
         logging.error(e.message)
         return error(status=500, detail=e.message)
@@ -329,7 +329,7 @@ def register_dataset():
             'status': 2,
             'errorMessage': 'Nexgddp tableName Not Valid'
         }
-        return jsonify(callback_to_dataset(body)), 200
+        return jsonify(callback_to_dataset(body, request.headers.get('x-api-key'))), 200
 
     try:
         QueryService.get_rasdaman_fields(scenario, model)
@@ -338,13 +338,13 @@ def register_dataset():
             'status': 2,
             'errorMessage': 'Error Validating Nexgddp Dataset'
         }
-        return jsonify(callback_to_dataset(body)), 200
+        return jsonify(callback_to_dataset(body, request.headers.get('x-api-key'))), 200
 
     body = {
         'status': 1
     }
 
-    return jsonify(callback_to_dataset(body)), 200
+    return jsonify(callback_to_dataset(body, request.headers.get('x-api-key'))), 200
 
 
 @nexgddp_endpoints.route('/layer/<layer>/tile/nexgddp/<int:z>/<int:x>/<int:y>', methods=['GET'])
@@ -558,11 +558,11 @@ def getLocaInfoIndicator(indicator):
 @nexgddp_endpoints.route('/dataset/<indicator>/<scenario>/<temporal_res>', methods=['GET'])
 def getDataset(indicator, scenario, temporal_res):
     logging.info('[NEXGDDP-ROUTER] Get info of indicator')
-    datasets = request_to_microservice(**{
-        'uri': '/v1/dataset?includes=layer&tableName=' + indicator + '/' + scenario + '_' + temporal_res + '&env=' + request.args.get(
-            "env", 'production'),
-        'method': 'GET'
-    }, api_key='')
+    datasets = request_to_microservice(
+        uri=f'/v1/dataset?includes=layer&tableName={indicator}/{scenario}_{temporal_res}&env={request.args.get("env", "production")}',
+        method='GET',
+        api_key=request.headers.get('x-api-key')
+    )
     if datasets.get('data') and len(datasets.get('data')) > 0:
         return jsonify({"data": datasets.get('data')[0]}), 200
     return jsonify({"errors": [{
@@ -574,11 +574,11 @@ def getDataset(indicator, scenario, temporal_res):
 @nexgddp_endpoints.route('/locadataset/<indicator>/<scenario>/<temporal_res>', methods=['GET'])
 def getLocaDataset(indicator, scenario, temporal_res):
     logging.info('[NEXGDDP-ROUTER] Get info of indicator')
-    datasets = request_to_microservice(**{
-        'uri': '/v1/dataset?includes=layer&tableName=loca_' + indicator + '/' + scenario + '_' + temporal_res + '&env=' + request.args.get(
-            "env", 'production'),
-        'method': 'GET'
-    }, api_key='')
+    datasets = request_to_microservice(
+        uri=f'/v1/dataset?includes=layer&tableName=loca_{indicator}/{scenario}_{temporal_res}&env={request.args.get("env", "production")}',
+        method='GET',
+        api_key=request.headers.get('x-api-key')
+    )
     if datasets.get('data') and len(datasets.get('data')) > 0:
         return jsonify({"data": datasets.get('data')[0]}), 200
     return jsonify({"errors": [{

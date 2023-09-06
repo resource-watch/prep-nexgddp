@@ -357,14 +357,14 @@ class QueryService(object):
         return output
 
     @staticmethod
-    def convert(query):
+    def convert(query, api_key):
         logging.info('Converting Query: ' + query)
         try:
-            config = {
-                'uri': '/v1/convert/sql2SQL?sql=' + query,
-                'method': 'GET'
-            }
-            response = request_to_microservice(**config, api_key='')
+            response = request_to_microservice(
+                uri=f'/v1/convert/sql2SQL?sql={query}',
+                api_key=api_key,
+                method='GET'
+            )
         except Exception as error:
             raise error
 

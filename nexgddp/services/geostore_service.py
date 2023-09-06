@@ -9,9 +9,9 @@ class GeostoreService(object):
     """."""
 
     @staticmethod
-    def execute(uri):
+    def execute(uri, api_key):
         try:
-            response = request_to_microservice(uri=uri, method="GET", api_key='')
+            response = request_to_microservice(uri=uri, method="GET", api_key=api_key)
             if not response or response.get('errors'):
                 raise GeostoreNotFound
             geostore = response.get('data', None).get('attributes', None)
@@ -22,5 +22,5 @@ class GeostoreService(object):
         return geojson, bbox
 
     @staticmethod
-    def get(geostore):
-        return GeostoreService.execute(uri=f"/v2/geostore/{geostore}")
+    def get(geostore, api_key):
+        return GeostoreService.execute(uri=f"/v2/geostore/{geostore}", api_key=api_key)
