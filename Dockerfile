@@ -1,4 +1,4 @@
-FROM python:3.6.13-stretch
+FROM python:3.11-bullseye
 MAINTAINER info@vizzuality.com
 
 ENV NAME nexgddp
@@ -18,7 +18,10 @@ RUN apt-get update && apt-get install -yq \
     libxslt1-dev \
     make \
     libpng-dev \
-    cmake
+    cmake \
+    ffmpeg \
+    libsm6 \
+    libxext6
 
 
 RUN groupadd $USER && useradd -g $USER $USER -s /bin/bash
@@ -42,8 +45,8 @@ COPY test.py /opt/$NAME/test.py
 COPY tests /opt/$NAME/tests
 COPY gunicorn.py /opt/$NAME/gunicorn.py
 
-RUN cd /opt/$NAME && pip install -r requirements.txt
-RUN cd /opt/$NAME && pip install -r requirements_dev.txt
+RUN pip install -r requirements.txt
+RUN pip install -r requirements_dev.txt
 
 RUN chown -R $USER:$USER /opt/$NAME
 

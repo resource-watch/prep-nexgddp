@@ -3,6 +3,15 @@ import logging
 
 import cv2
 import numpy as np
+
+import collections
+
+collections.MutableMapping = collections.abc.MutableMapping
+collections.Mapping = collections.abc.MutableMapping
+
+collections.Iterable = collections.abc.Iterable
+collections.Sized = collections.abc.Sized
+
 from matplotlib.colors import LinearSegmentedColormap
 
 from nexgddp.errors import CoverageNotFound

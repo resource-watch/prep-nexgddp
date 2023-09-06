@@ -361,10 +361,10 @@ class QueryService(object):
         logging.info('Converting Query: ' + query)
         try:
             config = {
-                'uri': '/convert/sql2SQL?sql=' + query,
+                'uri': '/v1/convert/sql2SQL?sql=' + query,
                 'method': 'GET'
             }
-            response = request_to_microservice(config)
+            response = request_to_microservice(**config, api_key='')
         except Exception as error:
             raise error
 
