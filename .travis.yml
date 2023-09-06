@@ -1,13 +1,10 @@
 dist: bionic
 language: python
 python:
-  - "3.6"
+  - "3.10"
+  - "3.11"
 services:
   - redis-server
-addons:
-  apt:
-    packages:
-    - libgdal-dev
 install:
     - pip install -r requirements.txt
     - pip install -r requirements_dev.txt
