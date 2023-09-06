@@ -16,14 +16,10 @@ RUN apt-get update && apt-get install -yq \
     libssl-dev \
     libxml2-dev \
     libxslt1-dev \
-    libgdal-dev \
-    gdal-bin \
     make \
     libpng-dev \
     cmake
 
-ENV CPLUS_INCLUDE_PATH /usr/include/gdal
-ENV C_INCLUDE_PATH /usr/include/gdal
 
 RUN groupadd $USER && useradd -g $USER $USER -s /bin/bash
 
@@ -32,7 +28,6 @@ RUN cd /opt/$NAME
 
 RUN pip install --upgrade pip
 RUN pip install gunicorn gevent numpy
-RUN pip install --global-option=build_ext --global-option="-I/usr/include/gdal" GDAL==2.1.3
 
 WORKDIR /opt/$NAME
 
