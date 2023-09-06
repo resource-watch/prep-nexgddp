@@ -3,6 +3,7 @@ import os
 
 import pytest
 import requests_mock
+from RWAPIMicroservicePython.test_utils import mock_request_validation
 
 import nexgddp
 
@@ -28,6 +29,7 @@ USERS = {
     "MANAGER": {
         "id": '1a10d7c6e0a37126611fd7a7',
         "role": 'MANAGER',
+        "name": 'John Manager',
         "provider": 'local',
         "email": 'user@control-tower.org',
         "extraUserData": {
@@ -85,8 +87,12 @@ def test_expire_layer_cache_anon(client, mocker):
 
 @requests_mock.Mocker(kw='mocker')
 def test_expire_layer_cache_as_admin(client, mocker):
-    get_user_data_calls = mocker.get(os.getenv('CT_URL') + '/auth/user/me', status_code=200, json=USERS['ADMIN'])
-    
+    get_user_data_calls = mock_request_validation(
+        mocker,
+        microservice_token=os.getenv("MICROSERVICE_TOKEN"),
+        user=USERS["ADMIN"]
+    )
+
     response = client.delete(
         '/api/v1/nexgddp/layer/nexgddp/:layer/expire-cache', headers={'Authorization': 'Bearer abcd'})
     assert json.loads(response.data) == {'errors': [{'detail': 'Not authorized', 'status': 403}]}
@@ -97,7 +103,11 @@ def test_expire_layer_cache_as_admin(client, mocker):
 
 @requests_mock.Mocker(kw='mocker')
 def test_expire_layer_cache_as_manager(client, mocker):
-    get_user_data_calls = mocker.get(os.getenv('CT_URL') + '/auth/user/me', status_code=200, json=USERS['MANAGER'])
+    get_user_data_calls = mock_request_validation(
+        mocker,
+        microservice_token=os.getenv("MICROSERVICE_TOKEN"),
+        user=USERS["MANAGER"]
+    )
 
     response = client.delete(
         '/api/v1/nexgddp/layer/nexgddp/:layer/expire-cache', headers={'Authorization': 'Bearer abcd'})
@@ -109,7 +119,11 @@ def test_expire_layer_cache_as_manager(client, mocker):
 
 @requests_mock.Mocker(kw='mocker')
 def test_expire_layer_cache_happy_case_for_empty_cache(client, mocker):
-    get_user_data_calls = mocker.get(os.getenv('CT_URL') + '/auth/user/me', status_code=200, json=USERS['MICROSERVICE'])
+    get_user_data_calls = mock_request_validation(
+        mocker,
+        microservice_token=os.getenv("MICROSERVICE_TOKEN"),
+        user=USERS["MICROSERVICE"]
+    )
 
     mocker.post('https://accounts.google.com/o/oauth2/token', json={
         'access_token': 'TEST_GOOGLE_OAUTH2_ACCESS_TOKEN',
@@ -132,7 +146,11 @@ def test_expire_layer_cache_happy_case_for_empty_cache(client, mocker):
 
 @requests_mock.Mocker(kw='mocker')
 def test_expire_nexgddp_layer_cache_happy_case(client, mocker):
-    get_user_data_calls = mocker.get(os.getenv('CT_URL') + '/auth/user/me', status_code=200, json=USERS['MICROSERVICE'])
+    get_user_data_calls = mock_request_validation(
+        mocker,
+        microservice_token=os.getenv("MICROSERVICE_TOKEN"),
+        user=USERS["MICROSERVICE"]
+    )
 
     mocker.post('https://accounts.google.com/o/oauth2/token', json={
         'access_token': 'TEST_GOOGLE_OAUTH2_ACCESS_TOKEN',
@@ -201,8 +219,12 @@ def test_expire_nexgddp_layer_cache_happy_case(client, mocker):
 
 @requests_mock.Mocker(kw='mocker')
 def test_expire_loca_layer_cache_happy_case(client, mocker):
-    get_user_data_calls = mocker.get(os.getenv('CT_URL') + '/auth/user/me', status_code=200, json=USERS['MICROSERVICE'])
-    
+    get_user_data_calls = mock_request_validation(
+        mocker,
+        microservice_token=os.getenv("MICROSERVICE_TOKEN"),
+        user=USERS["MICROSERVICE"]
+    )
+
     mocker.post('https://accounts.google.com/o/oauth2/token', json={
         'access_token': 'TEST_GOOGLE_OAUTH2_ACCESS_TOKEN',
         'expires_in': 3599,

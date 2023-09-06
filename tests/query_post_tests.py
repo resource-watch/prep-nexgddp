@@ -1,73 +1,32 @@
 import os
 from pathlib import Path
 
-import pytest
 import requests_mock
 
-import nexgddp
-
-
-@pytest.fixture
-def client():
-    app = nexgddp.app
-    app.config['TESTING'] = True
-    client = app.test_client()
-
-    yield client
+from tests.mocks import mock_get_dataset
+from tests.fixtures import (
+    dataset_loca_json,
+    dataset_nexgddp_json,
+    dataset_invalid_connector_type,
+    dataset_invalid_provider
+)
 
 
 @requests_mock.Mocker(kw='mocker')
 def test_query_dataset_that_does_not_exist(client, mocker):
-    mocker.get('{}/v1/dataset/foo'.format(os.getenv('CT_URL')), status_code=404,
-               json={"errors": [{"status": 404, "detail": "Dataset with id 'foo' doesn't exist"}]})
-
-    response = client.post('/api/v1/nexgddp/query/foo')
+    mock_get_dataset(
+        mocker,
+        status_code=404,
+        response_json={"errors": [{"status": 404, "detail": "Dataset with id 'bar' doesn't exist"}]}
+    )
+    response = client.post('/api/v1/nexgddp/query/bar')
     assert response.status_code == 404
-    assert response.data == b'{"errors":[{"detail":"Dataset with id foo doesn\'t exist","status":404}]}\n'
+    assert response.data == b'{"errors":[{"detail":"Dataset with id bar doesn\'t exist","status":404}]}\n'
 
 
 @requests_mock.Mocker(kw='mocker')
 def test_query_dataset_invalid_provider(client, mocker):
-    dataset_json = {
-        'data': {
-            'id': 'bar',
-            'type': 'dataset',
-            'attributes': {
-                'name': 'Test dataset 1',
-                'slug': 'test-dataset-1',
-                'type': 'tabular',
-                'subtitle': None,
-                'application': [
-                    'rw'
-                ],
-                'dataPath': None,
-                'attributesPath': None,
-                'connectorType': 'rest',
-                'provider': 'csv',
-                'userId': '1',
-                'connectorUrl': None,
-                'sources': [],
-                'tableName': 'index_d1ced4227cd5480a8904d3410d75bf42_1587619728489',
-                'status': 'saved',
-                'published': False,
-                'overwrite': True,
-                'mainDateField': None,
-                'env': 'production',
-                'geoInfo': False,
-                'protected': False,
-                'clonedHost': {},
-                'legend': {},
-                'errorMessage': None,
-                'taskId': None,
-                'createdAt': '2016-08-01T15:28:15.050Z',
-                'updatedAt': '2018-01-05T18:15:23.266Z',
-                'dataLastUpdated': None,
-                'widgetRelevantProps': [],
-                'layerRelevantProps': []
-            }
-        }}
-
-    mocker.get('{}/v1/dataset/bar'.format(os.getenv('CT_URL')), json=dataset_json)
+    mock_get_dataset(mocker, dataset_invalid_provider)
 
     response = client.post('/api/v1/nexgddp/query/bar')
     assert response.status_code == 422
@@ -76,46 +35,7 @@ def test_query_dataset_invalid_provider(client, mocker):
 
 @requests_mock.Mocker(kw='mocker')
 def test_query_dataset_invalid_connector_type(client, mocker):
-    dataset_json = {
-        'data': {
-            'id': 'bar',
-            'type': 'dataset',
-            'attributes': {
-                'name': 'Test dataset 1',
-                'slug': 'test-dataset-1',
-                'type': 'tabular',
-                'subtitle': None,
-                'application': [
-                    'rw'
-                ],
-                'dataPath': None,
-                'attributesPath': None,
-                'connectorType': 'document',
-                'provider': 'nexgddp',
-                'userId': '1',
-                'connectorUrl': None,
-                'sources': [],
-                'tableName': 'index_d1ced4227cd5480a8904d3410d75bf42_1587619728489',
-                'status': 'saved',
-                'published': False,
-                'overwrite': True,
-                'mainDateField': None,
-                'env': 'production',
-                'geoInfo': False,
-                'protected': False,
-                'clonedHost': {},
-                'legend': {},
-                'errorMessage': None,
-                'taskId': None,
-                'createdAt': '2016-08-01T15:28:15.050Z',
-                'updatedAt': '2018-01-05T18:15:23.266Z',
-                'dataLastUpdated': None,
-                'widgetRelevantProps': [],
-                'layerRelevantProps': []
-            }
-        }}
-
-    mocker.get('{}/v1/dataset/bar'.format(os.getenv('CT_URL')), json=dataset_json)
+    mock_get_dataset(mocker, dataset_invalid_connector_type)
 
     response = client.post('/api/v1/nexgddp/query/bar')
     assert response.status_code == 422
@@ -124,92 +44,17 @@ def test_query_dataset_invalid_connector_type(client, mocker):
 
 @requests_mock.Mocker(kw='mocker')
 def test_query_dataset_no_query(client, mocker):
-    dataset_json = {
-        'data': {
-            'id': 'bar',
-            'type': 'dataset',
-            'attributes': {
-                'name': 'Test dataset 1',
-                'slug': 'test-dataset-1',
-                'type': 'tabular',
-                'subtitle': None,
-                'application': [
-                    'rw'
-                ],
-                'dataPath': None,
-                'attributesPath': None,
-                'connectorType': 'rest',
-                'provider': 'nexgddp',
-                'userId': '1',
-                'connectorUrl': None,
-                'sources': [],
-                'tableName': 'cum_pr/rcp45_decadal',
-                'status': 'saved',
-                'published': False,
-                'overwrite': True,
-                'mainDateField': None,
-                'env': 'production',
-                'geoInfo': False,
-                'protected': False,
-                'clonedHost': {},
-                'legend': {},
-                'errorMessage': None,
-                'taskId': None,
-                'createdAt': '2016-08-01T15:28:15.050Z',
-                'updatedAt': '2018-01-05T18:15:23.266Z',
-                'dataLastUpdated': None,
-                'widgetRelevantProps': [],
-                'layerRelevantProps': []
-            }
-        }}
+    mock_get_dataset(mocker, dataset_nexgddp_json)
 
-    mocker.get('{}/v1/dataset/bar'.format(os.getenv('CT_URL')), json=dataset_json)
+    response = client.post('/api/v1/nexgddp/query/bar', json={})
 
-    response = client.post('/api/v1/nexgddp/query/bar')
     assert response.status_code == 400
     assert response.data == b'{"errors":[{"detail":"sql must be provided","status":400}]}\n'
 
 
+
 @requests_mock.Mocker(kw='mocker')
 def test_query_dataset_happy_case_nexgddp(client, mocker):
-    dataset_json = {
-        'data': {
-            'id': 'bar',
-            'type': 'dataset',
-            'attributes': {
-                'name': 'Test dataset 1',
-                'slug': 'test-dataset-1',
-                'type': 'tabular',
-                'subtitle': None,
-                'application': [
-                    'rw'
-                ],
-                'dataPath': None,
-                'attributesPath': None,
-                'connectorType': 'rest',
-                'provider': 'nexgddp',
-                'userId': '1',
-                'connectorUrl': None,
-                'sources': [],
-                'tableName': 'cum_pr/rcp45_decadal',
-                'status': 'saved',
-                'published': False,
-                'overwrite': True,
-                'mainDateField': None,
-                'env': 'production',
-                'geoInfo': False,
-                'protected': False,
-                'clonedHost': {},
-                'legend': {},
-                'errorMessage': None,
-                'taskId': None,
-                'createdAt': '2016-08-01T15:28:15.050Z',
-                'updatedAt': '2018-01-05T18:15:23.266Z',
-                'dataLastUpdated': None,
-                'widgetRelevantProps': [],
-                'layerRelevantProps': []
-            }
-        }}
 
     query_json = {
         "data": {
@@ -284,7 +129,7 @@ def test_query_dataset_happy_case_nexgddp(client, mocker):
         }
     }
 
-    mocker.get('{}/v1/dataset/bar'.format(os.getenv('CT_URL')), json=dataset_json)
+    mock_get_dataset(mocker, dataset_nexgddp_json)
 
     rasdaman_response_file = Path("tests/assets/get_fields_response.xml")
     with open(rasdaman_response_file, encoding='utf-8') as f:
@@ -297,12 +142,12 @@ def test_query_dataset_happy_case_nexgddp(client, mocker):
 
         mocker.get(
             '{}/v1/convert/sql2SQL?sql=select%20%2A%20from%20data'.format(
-                os.getenv('CT_URL')),
+                os.getenv('GATEWAY_URL')),
             json=query_json)
 
         mocker.get(
-            '{}/v1/geostore/46e0617e8d2000bd3c36e9e92bb5a35b'.format(
-                os.getenv('CT_URL')),
+            '{}/v2/geostore/46e0617e8d2000bd3c36e9e92bb5a35b'.format(
+                os.getenv('GATEWAY_URL')),
             json=geostore)
 
         mocker.post(
@@ -311,7 +156,11 @@ def test_query_dataset_happy_case_nexgddp(client, mocker):
         )
 
         response = client.post(
-            '/api/v1/nexgddp/query/bar?sql=select%20%2A%20from%20data&geostore=46e0617e8d2000bd3c36e9e92bb5a35b')
+            '/api/v1/nexgddp/query/bar?geostore=46e0617e8d2000bd3c36e9e92bb5a35b',
+            json={
+                'sql': 'select%20%2A%20from%20data'
+            }
+        )
 
         assert response.status_code == 200
         assert response.data == b'{"data":[{"cum_pr":0.01570915,"cum_pr_q25":0.01509484,"cum_pr_q75":0.0162086,"year":"1971-01-01T00:00:00-01:00"},{"cum_pr":0.01574764,"cum_pr_q25":0.01515527,"cum_pr_q75":0.01613505,"year":"1981-01-01T00:00:00-01:00"},{"cum_pr":0.01584321,"cum_pr_q25":0.01569834,"cum_pr_q75":0.01604243,"year":"1991-01-01T00:00:00-01:00"},{"cum_pr":0.01577098,"cum_pr_q25":0.01529838,"cum_pr_q75":0.01628494,"year":"2001-01-01T00:00:00-01:00"},{"cum_pr":0.01581504,"cum_pr_q25":0.01496018,"cum_pr_q75":0.01673895,"year":"2011-01-01T00:00:00-01:00"},{"cum_pr":0.01605528,"cum_pr_q25":0.01516556,"cum_pr_q75":0.01679384,"year":"2021-01-01T00:00:00-01:00"},{"cum_pr":0.01590445,"cum_pr_q25":0.01520149,"cum_pr_q75":0.01696718,"year":"2031-01-01T00:00:00-01:00"},{"cum_pr":0.01575057,"cum_pr_q25":0.01500688,"cum_pr_q75":0.01687931,"year":"2041-01-01T00:00:00-01:00"},{"cum_pr":0.01596653,"cum_pr_q25":0.01521986,"cum_pr_q75":0.01714825,"year":"2051-01-01T00:00:00-01:00"},{"cum_pr":0.01618101,"cum_pr_q25":0.01444959,"cum_pr_q75":0.01762878,"year":"2061-01-01T00:00:00-01:00"},{"cum_pr":0.01630418,"cum_pr_q25":0.0152118,"cum_pr_q75":0.01758959,"year":"2071-01-01T00:00:00-01:00"},{"cum_pr":0.01636603,"cum_pr_q25":0.01550237,"cum_pr_q75":0.01747726,"year":"2081-01-01T00:00:00-01:00"}]}\n'
@@ -320,44 +169,6 @@ def test_query_dataset_happy_case_nexgddp(client, mocker):
 
 @requests_mock.Mocker(kw='mocker')
 def test_query_dataset_happy_case_loca(client, mocker):
-    dataset_json = {
-        'data': {
-            'id': 'bar',
-            'type': 'dataset',
-            'attributes': {
-                'name': 'Test dataset 1',
-                'slug': 'test-dataset-1',
-                'type': 'tabular',
-                'subtitle': None,
-                'application': [
-                    'rw'
-                ],
-                'dataPath': None,
-                'attributesPath': None,
-                'connectorType': 'rest',
-                'provider': 'loca',
-                'userId': '1',
-                'connectorUrl': None,
-                'sources': [],
-                'tableName': 'cum_pr/rcp45_decadal',
-                'status': 'saved',
-                'published': False,
-                'overwrite': True,
-                'mainDateField': None,
-                'env': 'production',
-                'geoInfo': False,
-                'protected': False,
-                'clonedHost': {},
-                'legend': {},
-                'errorMessage': None,
-                'taskId': None,
-                'createdAt': '2016-08-01T15:28:15.050Z',
-                'updatedAt': '2018-01-05T18:15:23.266Z',
-                'dataLastUpdated': None,
-                'widgetRelevantProps': [],
-                'layerRelevantProps': []
-            }
-        }}
 
     query_json = {
         "data": {
@@ -432,7 +243,7 @@ def test_query_dataset_happy_case_loca(client, mocker):
         }
     }
 
-    mocker.get('{}/v1/dataset/bar'.format(os.getenv('CT_URL')), json=dataset_json)
+    mock_get_dataset(mocker, dataset_loca_json)
 
     rasdaman_response_file = Path("tests/assets/get_fields_response.xml")
     with open(rasdaman_response_file, encoding='utf-8') as f:
@@ -445,12 +256,12 @@ def test_query_dataset_happy_case_loca(client, mocker):
 
         mocker.get(
             '{}/v1/convert/sql2SQL?sql=select%20%2A%20from%20data'.format(
-                os.getenv('CT_URL')),
+                os.getenv('GATEWAY_URL')),
             json=query_json)
 
         mocker.get(
-            '{}/v1/geostore/46e0617e8d2000bd3c36e9e92bb5a35b'.format(
-                os.getenv('CT_URL')),
+            '{}/v2/geostore/46e0617e8d2000bd3c36e9e92bb5a35b'.format(
+                os.getenv('GATEWAY_URL')),
             json=geostore)
 
         mocker.post(
@@ -459,7 +270,11 @@ def test_query_dataset_happy_case_loca(client, mocker):
         )
 
         response = client.post(
-            '/api/v1/nexgddp/query/bar?sql=select%20%2A%20from%20data&geostore=46e0617e8d2000bd3c36e9e92bb5a35b')
+            '/api/v1/nexgddp/query/bar?geostore=46e0617e8d2000bd3c36e9e92bb5a35b',
+            json={
+                'sql': 'select%20%2A%20from%20data'
+            }
+        )
 
         assert response.status_code == 200
         assert response.data == b'{"data":[{"cum_pr":0.01570915,"cum_pr_q25":0.01509484,"cum_pr_q75":0.0162086,"year":"1971-01-01T00:00:00-01:00"},{"cum_pr":0.01574764,"cum_pr_q25":0.01515527,"cum_pr_q75":0.01613505,"year":"1981-01-01T00:00:00-01:00"},{"cum_pr":0.01584321,"cum_pr_q25":0.01569834,"cum_pr_q75":0.01604243,"year":"1991-01-01T00:00:00-01:00"},{"cum_pr":0.01577098,"cum_pr_q25":0.01529838,"cum_pr_q75":0.01628494,"year":"2001-01-01T00:00:00-01:00"},{"cum_pr":0.01581504,"cum_pr_q25":0.01496018,"cum_pr_q75":0.01673895,"year":"2011-01-01T00:00:00-01:00"},{"cum_pr":0.01605528,"cum_pr_q25":0.01516556,"cum_pr_q75":0.01679384,"year":"2021-01-01T00:00:00-01:00"},{"cum_pr":0.01590445,"cum_pr_q25":0.01520149,"cum_pr_q75":0.01696718,"year":"2031-01-01T00:00:00-01:00"},{"cum_pr":0.01575057,"cum_pr_q25":0.01500688,"cum_pr_q75":0.01687931,"year":"2041-01-01T00:00:00-01:00"},{"cum_pr":0.01596653,"cum_pr_q25":0.01521986,"cum_pr_q75":0.01714825,"year":"2051-01-01T00:00:00-01:00"},{"cum_pr":0.01618101,"cum_pr_q25":0.01444959,"cum_pr_q75":0.01762878,"year":"2061-01-01T00:00:00-01:00"},{"cum_pr":0.01630418,"cum_pr_q25":0.0152118,"cum_pr_q75":0.01758959,"year":"2071-01-01T00:00:00-01:00"},{"cum_pr":0.01636603,"cum_pr_q25":0.01550237,"cum_pr_q75":0.01747726,"year":"2081-01-01T00:00:00-01:00"}]}\n'
