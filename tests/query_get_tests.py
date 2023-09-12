@@ -158,7 +158,7 @@ def test_query_dataset_happy_case_nexgddp(client, mocker):
             json=query_json)
 
         mocker.get(
-            '{}/v2/geostore/46e0617e8d2000bd3c36e9e92bb5a35b'.format(
+            '{}/v1/geostore/46e0617e8d2000bd3c36e9e92bb5a35b'.format(
                 os.getenv('GATEWAY_URL')),
             json=geostore)
 
@@ -270,7 +270,7 @@ def test_query_dataset_happy_case_loca(client, mocker):
             json=query_json)
 
         mocker.get(
-            '{}/v2/geostore/46e0617e8d2000bd3c36e9e92bb5a35b'.format(
+            '{}/v1/geostore/46e0617e8d2000bd3c36e9e92bb5a35b'.format(
                 os.getenv('GATEWAY_URL')),
             json=geostore)
 

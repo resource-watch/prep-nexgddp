@@ -23,4 +23,4 @@ class GeostoreService(object):
 
     @staticmethod
     def get(geostore, api_key):
-        return GeostoreService.execute(uri=f"/v2/geostore/{geostore}", api_key=api_key)
+        return GeostoreService.execute(uri=f"/v1/geostore/{geostore}", api_key=api_key)
